@@ -6,6 +6,8 @@ from dotenv import load_dotenv
 from datetime import datetime
 from flask import Flask, jsonify, request
 from threading import Thread
+import gradio
+from functools import wraps
 
 # Configure logging
 logging.basicConfig(
@@ -221,9 +223,45 @@ def get_logs():
         logging.error(f'Errore nella lettura del file di log: {e}')
         return jsonify({'error': 'Impossibile leggere i log.'}), 500
 
+# Definizione dell'interfaccia Gradio
+def start_etl_gradio():
+    if etl_status['running']:
+        return "ETL già in esecuzione."
+    thread = Thread(target=run_etl)
+    thread.start()
+    return "Processo ETL avviato."
+
+def get_status_gradio():
+    return etl_status
+
+def get_processed_data_gradio():
+    return data_processed
+
+iface = gr.Blocks()
+
+with iface:
+    gr.Markdown("# Interfaccia ETL Flask Application")
+    
+    with gr.Row():
+        run_button = gr.Button("Avvia ETL")
+        status_output = gr.JSON(label="Stato ETL")
+    
+    data_output = gr.JSON(label="Dati Processati")
+    
+    run_button.click(fn=start_etl_gradio, outputs="text")
+    run_button.click(fn=get_status_gradio, outputs=status_output)
+    run_button.click(fn=get_processed_data_gradio, outputs=data_output)
+
+# Funzione per avviare Gradio
+def launch_gradio():
+    iface.launch(server_name="0.0.0.0", server_port=7860, share=False)
+
 if __name__ == '__main__':
     # Assicurati che la directory dei log esista
     if not os.path.exists('logs'):
         os.makedirs('logs')
+
+    gradio_thread = Thread(target=launch_gradio, daemon=True)
+    gradio_thread.start()
 
     app.run(host='0.0.0.0', port=5000, debug=True)
