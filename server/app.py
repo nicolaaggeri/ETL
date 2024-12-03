@@ -147,6 +147,18 @@ def run_etl():
             etl_status['last_success'] = datetime.utcnow().isoformat()
             etl_status['last_error'] = None
 
+            if processed_ids:
+                delete_query = """
+                DELETE FROM RawForgiatura
+                WHERE id = ANY(%s) AND stato_processo = 'PROCESSED'
+                """
+                pg_cursor.execute(delete_query, (processed_ids,))
+                pg_conn.commit()
+                logging.info(f'Eliminati {pg_cursor.rowcount} record processati dal database di staging.')
+
+            etl_status['last_success'] = datetime.utcnow().isoformat()
+            etl_status['last_error'] = None
+
         except mysql.connector.Error as e:
             logging.error(f'Errore durante l\'inserimento dei dati in MySQL: {e}')
             if my_conn.is_connected():
