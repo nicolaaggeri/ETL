@@ -1,0 +1,418 @@
+2024-12-02 12:50:20,556 - INFO - Connected to PostgreSQL.
+2024-12-02 12:50:20,896 - INFO - Connected to MySQL.
+2024-12-02 12:50:20,974 - ERROR - Error extracting data: relation "rawforgiatura" does not exist
+LINE 1: SELECT * FROM RawForgiatura WHERE stato_processo = 'PENDING'
+                      ^
+
+2024-12-02 12:55:14,620 - INFO - Connected to PostgreSQL.
+2024-12-02 12:55:14,945 - INFO - Connected to MySQL.
+2024-12-02 12:55:15,017 - ERROR - Error extracting data: column "stato_processo" does not exist
+LINE 1: SELECT * FROM RawForgiatura WHERE stato_processo = 'PENDING'
+                                          ^
+
+2024-12-02 12:55:54,114 - INFO - Connected to PostgreSQL.
+2024-12-02 12:55:54,430 - INFO - Connected to MySQL.
+2024-12-02 12:55:54,501 - INFO - Extracted 5 records from PostgreSQL.
+2024-12-02 12:55:54,501 - ERROR - Data transformation error for record 1: missing key 'event_timestamp'
+2024-12-02 12:55:54,502 - ERROR - Data transformation error for record 2: missing key 'event_timestamp'
+2024-12-02 12:55:54,502 - ERROR - Data transformation error for record 3: missing key 'event_timestamp'
+2024-12-02 12:55:54,502 - ERROR - Data transformation error for record 4: missing key 'event_timestamp'
+2024-12-02 12:55:54,502 - ERROR - Data transformation error for record 5: missing key 'event_timestamp'
+2024-12-02 12:55:54,502 - INFO - Data transformation complete.
+2024-12-02 12:55:54,537 - INFO - Inserted -1 records into MySQL.
+2024-12-02 12:55:54,612 - INFO - Updated processing status in PostgreSQL.
+2024-12-02 12:55:54,613 - INFO - Database connections closed.
+2024-12-02 14:40:55,586 - INFO - Connected to PostgreSQL.
+2024-12-02 14:40:56,005 - INFO - Connected to MySQL.
+2024-12-02 14:40:56,083 - INFO - Extracted 0 records from PostgreSQL.
+2024-12-02 14:40:56,083 - INFO - Data transformation complete.
+2024-12-02 14:40:56,128 - INFO - Inserted -1 records into MySQL.
+2024-12-02 14:40:56,179 - ERROR - Error updating processing status: syntax error at or near ")"
+LINE 1: ...awForgiatura SET stato_processo = 'PROCESSED' WHERE id IN ()
+                                                                      ^
+
+2024-12-02 14:40:56,211 - INFO - Database connections closed.
+2024-12-02 14:42:36,860 - INFO - Connected to PostgreSQL.
+2024-12-02 14:42:37,190 - INFO - Connected to MySQL.
+2024-12-02 14:42:37,265 - INFO - Extracted 0 records from PostgreSQL.
+2024-12-02 14:42:37,265 - INFO - Data transformation complete.
+2024-12-02 14:42:37,302 - INFO - Inserted -1 records into MySQL.
+2024-12-02 14:42:37,340 - ERROR - Error updating processing status: syntax error at or near ")"
+LINE 1: ...awForgiatura SET stato_processo = 'PROCESSED' WHERE id IN ()
+                                                                      ^
+
+2024-12-02 14:42:37,378 - INFO - Database connections closed.
+2024-12-02 14:51:13,450 - INFO - Connected to PostgreSQL.
+2024-12-02 14:51:13,765 - INFO - Connected to MySQL.
+2024-12-02 14:51:13,839 - INFO - Extracted 5 records from PostgreSQL.
+2024-12-02 14:51:13,840 - ERROR - Data transformation error for record 6: missing key 'event_timestamp'
+2024-12-02 14:51:13,840 - ERROR - Data transformation error for record 7: missing key 'event_timestamp'
+2024-12-02 14:51:13,841 - ERROR - Data transformation error for record 8: missing key 'event_timestamp'
+2024-12-02 14:51:13,841 - ERROR - Data transformation error for record 9: missing key 'event_timestamp'
+2024-12-02 14:51:13,841 - ERROR - Data transformation error for record 10: missing key 'event_timestamp'
+2024-12-02 14:51:13,842 - INFO - Data transformation complete.
+2024-12-02 14:51:13,877 - INFO - Inserted -1 records into MySQL.
+2024-12-02 14:51:13,952 - INFO - Aggiornato lo stato di 5 record in PostgreSQL.
+2024-12-02 14:59:28,993 - INFO - Connected to PostgreSQL.
+2024-12-02 14:59:29,372 - INFO - Connected to MySQL.
+2024-12-02 14:59:29,446 - INFO - Extracted 5 records from PostgreSQL.
+2024-12-02 14:59:29,446 - ERROR - Data transformation error for record 11: missing key 'codice_pezzo'
+2024-12-02 14:59:29,446 - ERROR - Data transformation error for record 12: missing key 'codice_pezzo'
+2024-12-02 14:59:29,446 - ERROR - Data transformation error for record 13: missing key 'codice_pezzo'
+2024-12-02 14:59:29,446 - ERROR - Data transformation error for record 14: missing key 'codice_pezzo'
+2024-12-02 14:59:29,446 - ERROR - Data transformation error for record 15: missing key 'codice_pezzo'
+2024-12-02 14:59:29,446 - INFO - Data transformation complete.
+2024-12-02 14:59:29,487 - INFO - Inserted -1 records into MySQL.
+2024-12-02 14:59:29,561 - INFO - Aggiornato lo stato di 5 record in PostgreSQL.
+2024-12-02 15:00:54,173 - INFO - Connected to PostgreSQL.
+2024-12-02 15:00:54,493 - INFO - Connected to MySQL.
+2024-12-02 15:00:54,567 - INFO - Extracted 5 records from PostgreSQL.
+2024-12-02 15:00:54,568 - INFO - Data transformation complete.
+2024-12-02 15:00:54,690 - ERROR - Errore durante l'inserimento dei dati in MySQL: 1452 (23000): Cannot add or update a child row: a foreign key constraint fails ("defaultdb"."Forgiatura", CONSTRAINT "Forgiatura_ibfk_1" FOREIGN KEY ("codice_pezzo") REFERENCES "Pezzi" ("codice_pezzo"))
+2024-12-02 15:02:18,504 - INFO - Connected to PostgreSQL.
+2024-12-02 15:02:18,815 - INFO - Connected to MySQL.
+2024-12-02 15:02:18,890 - INFO - Extracted 5 records from PostgreSQL.
+2024-12-02 15:02:18,890 - INFO - Data transformation complete.
+2024-12-02 15:02:18,922 - ERROR - Errore durante l'inserimento dei dati in MySQL: 1452 (23000): Cannot add or update a child row: a foreign key constraint fails ("defaultdb"."Forgiatura", CONSTRAINT "Forgiatura_ibfk_1" FOREIGN KEY ("codice_pezzo") REFERENCES "Pezzi" ("codice_pezzo"))
+2024-12-02 15:04:24,676 - INFO - Connected to PostgreSQL.
+2024-12-02 15:04:25,018 - INFO - Connected to MySQL.
+2024-12-02 15:04:25,092 - INFO - Extracted 5 records from PostgreSQL.
+2024-12-02 15:04:25,093 - INFO - Data transformation complete.
+2024-12-02 15:04:25,093 - ERROR - Errore generico: name 'cursor' is not defined
+2024-12-02 15:04:53,907 - INFO - Connected to PostgreSQL.
+2024-12-02 15:04:54,269 - INFO - Connected to MySQL.
+2024-12-02 15:04:54,339 - INFO - Extracted 5 records from PostgreSQL.
+2024-12-02 15:04:54,340 - INFO - Data transformation complete.
+2024-12-02 15:04:54,376 - INFO - Foreign key checks disabilitati.
+2024-12-02 15:04:54,483 - INFO - Inserted 5 records into MySQL.
+2024-12-02 15:04:54,520 - INFO - Foreign key checks riabilitati.
+2024-12-02 15:04:54,594 - INFO - Aggiornato lo stato di 5 record in PostgreSQL.
+2024-12-02 16:56:41,903 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://172.20.211.218:5000
+2024-12-02 16:56:41,904 - INFO - [33mPress CTRL+C to quit[0m
+2024-12-02 16:56:41,912 - INFO -  * Restarting with stat
+2024-12-02 16:56:42,910 - WARNING -  * Debugger is active!
+2024-12-02 16:56:42,916 - INFO -  * Debugger PIN: 392-371-963
+2024-12-02 16:59:26,304 - INFO -  * Detected change in 'Z:\\git\\Lab_Integrato\\ETLPython\\app.py', reloading
+2024-12-02 16:59:26,347 - INFO -  * Restarting with stat
+2024-12-02 16:59:27,500 - WARNING -  * Debugger is active!
+2024-12-02 16:59:27,505 - INFO -  * Debugger PIN: 392-371-963
+2024-12-02 17:00:06,346 - INFO - 127.0.0.1 - - [02/Dec/2024 17:00:06] "[33mGET / HTTP/1.1[0m" 404 -
+2024-12-02 17:00:06,505 - INFO - 127.0.0.1 - - [02/Dec/2024 17:00:06] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2024-12-02 17:00:24,562 - INFO - 172.20.211.218 - - [02/Dec/2024 17:00:24] "[33mGET / HTTP/1.1[0m" 404 -
+2024-12-02 17:00:24,711 - INFO - 172.20.211.218 - - [02/Dec/2024 17:00:24] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2024-12-02 17:05:13,989 - INFO - 127.0.0.1 - - [02/Dec/2024 17:05:13] "[33mGET / HTTP/1.1[0m" 404 -
+2024-12-02 17:05:14,128 - INFO - 127.0.0.1 - - [02/Dec/2024 17:05:14] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2024-12-02 17:06:36,722 - INFO - 172.20.211.218 - - [02/Dec/2024 17:06:36] "[33mGET /stats HTTP/1.1[0m" 404 -
+2024-12-02 17:06:40,144 - INFO - 172.20.211.218 - - [02/Dec/2024 17:06:40] "[33mGET /stat HTTP/1.1[0m" 404 -
+2024-12-02 17:07:05,684 - INFO - 172.20.211.218 - - [02/Dec/2024 17:07:05] "GET /status HTTP/1.1" 200 -
+2024-12-02 17:07:15,345 - INFO - 172.20.211.218 - - [02/Dec/2024 17:07:15] "[33mGET /rn-etl HTTP/1.1[0m" 404 -
+2024-12-02 17:07:21,216 - INFO - 172.20.211.218 - - [02/Dec/2024 17:07:21] "[31m[1mGET /run-etl HTTP/1.1[0m" 405 -
+2024-12-02 17:07:24,920 - INFO - 172.20.211.218 - - [02/Dec/2024 17:07:24] "[31m[1mGET /run-etl HTTP/1.1[0m" 405 -
+2024-12-02 17:08:00,282 - INFO - 172.20.211.218 - - [02/Dec/2024 17:08:00] "GET /logs HTTP/1.1" 200 -
+2024-12-02 17:10:05,130 - INFO -  * Detected change in 'Z:\\git\\Lab_Integrato\\ETLPython\\app.py', reloading
+2024-12-02 17:10:05,185 - INFO -  * Restarting with stat
+2024-12-02 17:10:06,368 - WARNING -  * Debugger is active!
+2024-12-02 17:10:06,374 - INFO -  * Debugger PIN: 392-371-963
+2024-12-02 17:10:21,199 - INFO - 172.20.211.218 - - [02/Dec/2024 17:10:21] "GET /run HTTP/1.1" 200 -
+2024-12-02 17:11:24,643 - INFO -  * Detected change in 'Z:\\git\\Lab_Integrato\\ETLPython\\app.py', reloading
+2024-12-02 17:11:24,687 - INFO -  * Restarting with stat
+2024-12-02 17:11:25,883 - WARNING -  * Debugger is active!
+2024-12-02 17:11:25,888 - INFO -  * Debugger PIN: 392-371-963
+2024-12-02 17:11:28,333 - INFO - 172.20.211.218 - - [02/Dec/2024 17:11:28] "[35m[1mGET /run HTTP/1.1[0m" 500 -
+2024-12-02 17:11:28,427 - INFO - 172.20.211.218 - - [02/Dec/2024 17:11:28] "GET /run?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1" 200 -
+2024-12-02 17:11:28,443 - INFO - 172.20.211.218 - - [02/Dec/2024 17:11:28] "GET /run?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1" 200 -
+2024-12-02 17:11:28,543 - INFO - 172.20.211.218 - - [02/Dec/2024 17:11:28] "GET /run?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1" 200 -
+2024-12-02 17:13:35,195 - INFO -  * Detected change in 'Z:\\git\\Lab_Integrato\\ETLPython\\app.py', reloading
+2024-12-02 17:13:35,246 - INFO -  * Restarting with stat
+2024-12-02 17:13:36,446 - WARNING -  * Debugger is active!
+2024-12-02 17:13:36,452 - INFO -  * Debugger PIN: 392-371-963
+2024-12-02 17:13:38,166 - INFO - Connesso a PostgreSQL.
+2024-12-02 17:13:38,700 - INFO - Connesso a MySQL.
+2024-12-02 17:13:38,771 - INFO - Estrazione di 5 record da PostgreSQL.
+2024-12-02 17:13:38,772 - INFO - Trasformazione dei dati completata.
+2024-12-02 17:13:38,813 - INFO - Foreign key checks disabilitati.
+2024-12-02 17:13:39,078 - INFO - Inseriti 5 record in MySQL.
+2024-12-02 17:13:39,113 - INFO - Foreign key checks riabilitati.
+2024-12-02 17:13:39,114 - ERROR - Errore generico: tuple indices must be integers or slices, not str
+2024-12-02 17:13:39,151 - INFO - Connessione a MySQL chiusa.
+2024-12-02 17:13:39,152 - INFO - Connessione a PostgreSQL chiusa.
+2024-12-02 17:13:39,153 - INFO - 172.20.211.218 - - [02/Dec/2024 17:13:39] "GET /run HTTP/1.1" 200 -
+2024-12-02 17:18:32,048 - INFO -  * Detected change in 'Z:\\git\\Lab_Integrato\\ETLPython\\app.py', reloading
+2024-12-02 17:18:32,103 - INFO -  * Restarting with stat
+2024-12-02 17:18:33,269 - WARNING -  * Debugger is active!
+2024-12-02 17:18:33,275 - INFO -  * Debugger PIN: 392-371-963
+2024-12-02 17:19:40,236 - INFO -  * Detected change in 'Z:\\git\\Lab_Integrato\\ETLPython\\app.py', reloading
+2024-12-02 17:19:40,276 - INFO -  * Restarting with stat
+2024-12-02 17:19:41,584 - WARNING -  * Debugger is active!
+2024-12-02 17:19:41,590 - INFO -  * Debugger PIN: 392-371-963
+2024-12-02 17:21:12,549 - INFO -  * Detected change in 'Z:\\git\\Lab_Integrato\\ETLPython\\app.py', reloading
+2024-12-02 17:21:12,595 - INFO -  * Restarting with stat
+2024-12-02 17:21:13,848 - WARNING -  * Debugger is active!
+2024-12-02 17:21:13,853 - INFO -  * Debugger PIN: 392-371-963
+2024-12-02 17:21:35,350 - INFO -  * Detected change in 'Z:\\git\\Lab_Integrato\\ETLPython\\app.py', reloading
+2024-12-02 17:21:35,386 - INFO -  * Restarting with stat
+2024-12-02 17:21:36,614 - WARNING -  * Debugger is active!
+2024-12-02 17:21:36,620 - INFO -  * Debugger PIN: 392-371-963
+2024-12-02 17:21:42,994 - INFO - Connesso a PostgreSQL.
+2024-12-02 17:21:43,323 - INFO - Connesso a MySQL.
+2024-12-02 17:21:43,395 - INFO - Estrazione di 5 record da PostgreSQL.
+2024-12-02 17:21:43,395 - INFO - Trasformazione dei dati completata.
+2024-12-02 17:21:43,429 - INFO - Foreign key checks disabilitati.
+2024-12-02 17:21:43,502 - INFO - Inseriti 5 record in MySQL.
+2024-12-02 17:21:43,537 - INFO - Foreign key checks riabilitati.
+2024-12-02 17:21:43,538 - ERROR - Errore generico: name 'logger' is not defined
+2024-12-02 17:21:43,574 - INFO - Connessione a MySQL chiusa.
+2024-12-02 17:21:43,574 - INFO - Connessione a PostgreSQL chiusa.
+2024-12-02 17:21:43,575 - INFO - 172.20.211.218 - - [02/Dec/2024 17:21:43] "GET /run HTTP/1.1" 200 -
+2024-12-02 17:22:18,392 - INFO -  * Detected change in 'Z:\\git\\Lab_Integrato\\ETLPython\\app.py', reloading
+2024-12-02 17:22:18,446 - INFO -  * Restarting with stat
+2024-12-02 17:22:19,649 - WARNING -  * Debugger is active!
+2024-12-02 17:22:19,655 - INFO -  * Debugger PIN: 392-371-963
+2024-12-02 17:22:23,350 - INFO - Connesso a PostgreSQL.
+2024-12-02 17:22:23,670 - INFO - Connesso a MySQL.
+2024-12-02 17:22:23,739 - INFO - Estrazione di 5 record da PostgreSQL.
+2024-12-02 17:22:23,740 - INFO - Trasformazione dei dati completata.
+2024-12-02 17:22:23,776 - INFO - Foreign key checks disabilitati.
+2024-12-02 17:22:23,849 - INFO - Inseriti 5 record in MySQL.
+2024-12-02 17:22:23,885 - INFO - Foreign key checks riabilitati.
+2024-12-02 17:22:23,885 - INFO - etl_status type: <class 'dict'>, value: {'running': True, 'last_run': '2024-12-02T16:22:23.104955', 'last_success': None, 'last_error': None}
+2024-12-02 17:22:23,887 - INFO - Raw Data: [(21, 'MACCHINA_01', 'PEZZO_A1', Decimal('150.50'), Decimal('1200.00'), datetime.datetime(2023, 10, 1, 8, 30), None, datetime.datetime(2024, 12, 2, 16, 45, 43, 914115), 'PENDING'), (22, 'MACCHINA_02', 'PEZZO_B2', Decimal('200.75'), Decimal('1150.50'), datetime.datetime(2023, 10, 1, 9, 15), 'Sovratemperatura', datetime.datetime(2024, 12, 2, 16, 45, 43, 914115), 'PENDING'), (23, 'MACCHINA_03', 'PEZZO_C3', Decimal('175.20'), Decimal('1185.75'), datetime.datetime(2023, 10, 1, 10, 5), None, datetime.datetime(2024, 12, 2, 16, 45, 43, 914115), 'PENDING'), (24, 'MACCHINA_01', 'PEZZO_D4', Decimal('160.00'), Decimal('1190.00'), datetime.datetime(2023, 10, 1, 10, 45), 'Anomalia peso', datetime.datetime(2024, 12, 2, 16, 45, 43, 914115), 'PENDING'), (25, 'MACCHINA_02', 'PEZZO_E5', Decimal('190.30'), Decimal('1175.25'), datetime.datetime(2023, 10, 1, 11, 30), None, datetime.datetime(2024, 12, 2, 16, 45, 43, 914115), 'PENDING')]
+2024-12-02 17:22:23,888 - ERROR - Errore generico: tuple indices must be integers or slices, not str
+2024-12-02 17:22:23,924 - INFO - Connessione a MySQL chiusa.
+2024-12-02 17:22:23,924 - INFO - Connessione a PostgreSQL chiusa.
+2024-12-02 17:22:23,925 - INFO - 172.20.211.218 - - [02/Dec/2024 17:22:23] "GET /run HTTP/1.1" 200 -
+2024-12-02 17:23:08,928 - INFO -  * Detected change in 'Z:\\git\\Lab_Integrato\\ETLPython\\app.py', reloading
+2024-12-02 17:23:08,977 - INFO -  * Restarting with stat
+2024-12-02 17:23:10,162 - WARNING -  * Debugger is active!
+2024-12-02 17:23:10,168 - INFO -  * Debugger PIN: 392-371-963
+2024-12-02 17:23:12,893 - INFO - Connesso a PostgreSQL.
+2024-12-02 17:23:13,230 - INFO - Connesso a MySQL.
+2024-12-02 17:23:13,308 - INFO - Estrazione di 5 record da PostgreSQL.
+2024-12-02 17:23:13,308 - INFO - Trasformazione dei dati completata.
+2024-12-02 17:23:13,343 - INFO - Foreign key checks disabilitati.
+2024-12-02 17:23:13,417 - INFO - Inseriti 5 record in MySQL.
+2024-12-02 17:23:13,452 - INFO - Foreign key checks riabilitati.
+2024-12-02 17:23:13,452 - INFO - etl_status type: <class 'dict'>, value: {'running': True, 'last_run': '2024-12-02T16:23:12.626486', 'last_success': None, 'last_error': None}
+2024-12-02 17:23:13,453 - INFO - Raw Data: [(21, 'MACCHINA_01', 'PEZZO_A1', Decimal('150.50'), Decimal('1200.00'), datetime.datetime(2023, 10, 1, 8, 30), None, datetime.datetime(2024, 12, 2, 16, 45, 43, 914115), 'PENDING'), (22, 'MACCHINA_02', 'PEZZO_B2', Decimal('200.75'), Decimal('1150.50'), datetime.datetime(2023, 10, 1, 9, 15), 'Sovratemperatura', datetime.datetime(2024, 12, 2, 16, 45, 43, 914115), 'PENDING'), (23, 'MACCHINA_03', 'PEZZO_C3', Decimal('175.20'), Decimal('1185.75'), datetime.datetime(2023, 10, 1, 10, 5), None, datetime.datetime(2024, 12, 2, 16, 45, 43, 914115), 'PENDING'), (24, 'MACCHINA_01', 'PEZZO_D4', Decimal('160.00'), Decimal('1190.00'), datetime.datetime(2023, 10, 1, 10, 45), 'Anomalia peso', datetime.datetime(2024, 12, 2, 16, 45, 43, 914115), 'PENDING'), (25, 'MACCHINA_02', 'PEZZO_E5', Decimal('190.30'), Decimal('1175.25'), datetime.datetime(2023, 10, 1, 11, 30), None, datetime.datetime(2024, 12, 2, 16, 45, 43, 914115), 'PENDING')]
+2024-12-02 17:23:13,454 - ERROR - Errore generico: tuple indices must be integers or slices, not str
+2024-12-02 17:23:13,489 - INFO - Connessione a MySQL chiusa.
+2024-12-02 17:23:13,490 - INFO - Connessione a PostgreSQL chiusa.
+2024-12-02 17:23:13,490 - INFO - 172.20.211.218 - - [02/Dec/2024 17:23:13] "GET /run HTTP/1.1" 200 -
+2024-12-02 17:23:34,001 - INFO -  * Detected change in 'Z:\\git\\Lab_Integrato\\ETLPython\\app.py', reloading
+2024-12-02 17:23:34,062 - INFO -  * Restarting with stat
+2024-12-02 17:23:35,266 - WARNING -  * Debugger is active!
+2024-12-02 17:23:35,273 - INFO -  * Debugger PIN: 392-371-963
+2024-12-02 17:23:37,939 - INFO - Connesso a PostgreSQL.
+2024-12-02 17:23:38,252 - INFO - Connesso a MySQL.
+2024-12-02 17:23:38,324 - INFO - Estrazione di 5 record da PostgreSQL.
+2024-12-02 17:23:38,326 - INFO - Trasformazione dei dati completata.
+2024-12-02 17:23:38,363 - INFO - Foreign key checks disabilitati.
+2024-12-02 17:23:38,435 - INFO - Inseriti 5 record in MySQL.
+2024-12-02 17:23:38,472 - INFO - Foreign key checks riabilitati.
+2024-12-02 17:23:38,472 - INFO - etl_status type: <class 'dict'>, value: {'running': True, 'last_run': '2024-12-02T16:23:37.670361', 'last_success': None, 'last_error': None}
+2024-12-02 17:23:38,473 - INFO - Raw Data: [(21, 'MACCHINA_01', 'PEZZO_A1', Decimal('150.50'), Decimal('1200.00'), datetime.datetime(2023, 10, 1, 8, 30), None, datetime.datetime(2024, 12, 2, 16, 45, 43, 914115), 'PENDING'), (22, 'MACCHINA_02', 'PEZZO_B2', Decimal('200.75'), Decimal('1150.50'), datetime.datetime(2023, 10, 1, 9, 15), 'Sovratemperatura', datetime.datetime(2024, 12, 2, 16, 45, 43, 914115), 'PENDING'), (23, 'MACCHINA_03', 'PEZZO_C3', Decimal('175.20'), Decimal('1185.75'), datetime.datetime(2023, 10, 1, 10, 5), None, datetime.datetime(2024, 12, 2, 16, 45, 43, 914115), 'PENDING'), (24, 'MACCHINA_01', 'PEZZO_D4', Decimal('160.00'), Decimal('1190.00'), datetime.datetime(2023, 10, 1, 10, 45), 'Anomalia peso', datetime.datetime(2024, 12, 2, 16, 45, 43, 914115), 'PENDING'), (25, 'MACCHINA_02', 'PEZZO_E5', Decimal('190.30'), Decimal('1175.25'), datetime.datetime(2023, 10, 1, 11, 30), None, datetime.datetime(2024, 12, 2, 16, 45, 43, 914115), 'PENDING')]
+2024-12-02 17:23:38,475 - ERROR - Errore generico: name 'processed_ids_mysql' is not defined
+2024-12-02 17:23:38,511 - INFO - Connessione a MySQL chiusa.
+2024-12-02 17:23:38,511 - INFO - Connessione a PostgreSQL chiusa.
+2024-12-02 17:23:38,512 - INFO - 172.20.211.218 - - [02/Dec/2024 17:23:38] "GET /run HTTP/1.1" 200 -
+2024-12-02 17:23:56,766 - INFO -  * Detected change in 'Z:\\git\\Lab_Integrato\\ETLPython\\app.py', reloading
+2024-12-02 17:23:56,812 - INFO -  * Restarting with stat
+2024-12-02 17:23:58,059 - WARNING -  * Debugger is active!
+2024-12-02 17:23:58,065 - INFO -  * Debugger PIN: 392-371-963
+2024-12-02 17:23:58,461 - INFO - Connesso a PostgreSQL.
+2024-12-02 17:23:58,780 - INFO - Connesso a MySQL.
+2024-12-02 17:23:58,853 - INFO - Estrazione di 5 record da PostgreSQL.
+2024-12-02 17:23:58,855 - INFO - Trasformazione dei dati completata.
+2024-12-02 17:23:58,890 - INFO - Foreign key checks disabilitati.
+2024-12-02 17:23:58,961 - INFO - Inseriti 5 record in MySQL.
+2024-12-02 17:23:58,997 - INFO - Foreign key checks riabilitati.
+2024-12-02 17:23:58,997 - INFO - etl_status type: <class 'dict'>, value: {'running': True, 'last_run': '2024-12-02T16:23:58.209324', 'last_success': None, 'last_error': None}
+2024-12-02 17:23:58,998 - INFO - Raw Data: [(21, 'MACCHINA_01', 'PEZZO_A1', Decimal('150.50'), Decimal('1200.00'), datetime.datetime(2023, 10, 1, 8, 30), None, datetime.datetime(2024, 12, 2, 16, 45, 43, 914115), 'PENDING'), (22, 'MACCHINA_02', 'PEZZO_B2', Decimal('200.75'), Decimal('1150.50'), datetime.datetime(2023, 10, 1, 9, 15), 'Sovratemperatura', datetime.datetime(2024, 12, 2, 16, 45, 43, 914115), 'PENDING'), (23, 'MACCHINA_03', 'PEZZO_C3', Decimal('175.20'), Decimal('1185.75'), datetime.datetime(2023, 10, 1, 10, 5), None, datetime.datetime(2024, 12, 2, 16, 45, 43, 914115), 'PENDING'), (24, 'MACCHINA_01', 'PEZZO_D4', Decimal('160.00'), Decimal('1190.00'), datetime.datetime(2023, 10, 1, 10, 45), 'Anomalia peso', datetime.datetime(2024, 12, 2, 16, 45, 43, 914115), 'PENDING'), (25, 'MACCHINA_02', 'PEZZO_E5', Decimal('190.30'), Decimal('1175.25'), datetime.datetime(2023, 10, 1, 11, 30), None, datetime.datetime(2024, 12, 2, 16, 45, 43, 914115), 'PENDING')]
+2024-12-02 17:23:59,000 - INFO - ID MySQL Processati: []
+2024-12-02 17:23:59,000 - WARNING - Nessun ID valido trovato in raw_data. Nessun aggiornamento eseguito in PostgreSQL.
+2024-12-02 17:23:59,035 - INFO - Connessione a MySQL chiusa.
+2024-12-02 17:23:59,035 - INFO - Connessione a PostgreSQL chiusa.
+2024-12-02 17:23:59,036 - INFO - 172.20.211.218 - - [02/Dec/2024 17:23:59] "GET /run HTTP/1.1" 200 -
+2024-12-02 17:26:22,977 - INFO - Connesso a PostgreSQL.
+2024-12-02 17:26:23,242 - INFO - Connesso a MySQL.
+2024-12-02 17:26:23,316 - INFO - Estrazione di 5 record da PostgreSQL.
+2024-12-02 17:26:23,316 - INFO - Trasformazione dei dati completata.
+2024-12-02 17:26:23,352 - INFO - Foreign key checks disabilitati.
+2024-12-02 17:26:23,424 - INFO - Inseriti 5 record in MySQL.
+2024-12-02 17:26:23,460 - INFO - Foreign key checks riabilitati.
+2024-12-02 17:26:23,460 - INFO - etl_status type: <class 'dict'>, value: {'running': True, 'last_run': '2024-12-02T16:26:22.713274', 'last_success': '2024-12-02T16:23:59.001411', 'last_error': None}
+2024-12-02 17:26:23,462 - INFO - Raw Data: [(21, 'MACCHINA_01', 'PEZZO_A1', Decimal('150.50'), Decimal('1200.00'), datetime.datetime(2023, 10, 1, 8, 30), None, datetime.datetime(2024, 12, 2, 16, 45, 43, 914115), 'PENDING'), (22, 'MACCHINA_02', 'PEZZO_B2', Decimal('200.75'), Decimal('1150.50'), datetime.datetime(2023, 10, 1, 9, 15), 'Sovratemperatura', datetime.datetime(2024, 12, 2, 16, 45, 43, 914115), 'PENDING'), (23, 'MACCHINA_03', 'PEZZO_C3', Decimal('175.20'), Decimal('1185.75'), datetime.datetime(2023, 10, 1, 10, 5), None, datetime.datetime(2024, 12, 2, 16, 45, 43, 914115), 'PENDING'), (24, 'MACCHINA_01', 'PEZZO_D4', Decimal('160.00'), Decimal('1190.00'), datetime.datetime(2023, 10, 1, 10, 45), 'Anomalia peso', datetime.datetime(2024, 12, 2, 16, 45, 43, 914115), 'PENDING'), (25, 'MACCHINA_02', 'PEZZO_E5', Decimal('190.30'), Decimal('1175.25'), datetime.datetime(2023, 10, 1, 11, 30), None, datetime.datetime(2024, 12, 2, 16, 45, 43, 914115), 'PENDING')]
+2024-12-02 17:26:23,464 - INFO - ID MySQL Processati: []
+2024-12-02 17:26:23,464 - WARNING - Nessun ID valido trovato in raw_data. Nessun aggiornamento eseguito in PostgreSQL.
+2024-12-02 17:26:23,501 - INFO - Connessione a MySQL chiusa.
+2024-12-02 17:26:23,502 - INFO - Connessione a PostgreSQL chiusa.
+2024-12-02 17:26:23,502 - INFO - 172.20.211.218 - - [02/Dec/2024 17:26:23] "GET /run HTTP/1.1" 200 -
+2024-12-02 17:29:06,874 - INFO -  * Detected change in 'Z:\\git\\Lab_Integrato\\ETLPython\\app.py', reloading
+2024-12-02 17:29:06,929 - INFO -  * Restarting with stat
+2024-12-02 17:29:08,106 - WARNING -  * Debugger is active!
+2024-12-02 17:29:08,113 - INFO -  * Debugger PIN: 392-371-963
+2024-12-02 17:29:11,173 - INFO - Connesso a PostgreSQL.
+2024-12-02 17:29:11,530 - INFO - Connesso a MySQL.
+2024-12-02 17:29:11,605 - INFO - Estrazione di 5 record da PostgreSQL.
+2024-12-02 17:29:11,605 - INFO - Trasformazione dei dati completata.
+2024-12-02 17:29:11,642 - INFO - Foreign key checks disabilitati.
+2024-12-02 17:29:11,716 - INFO - Inseriti 5 record in MySQL.
+2024-12-02 17:29:11,752 - INFO - Foreign key checks riabilitati.
+2024-12-02 17:29:11,753 - INFO - etl_status type: <class 'dict'>, value: {'running': True, 'last_run': '2024-12-02T16:29:10.919852', 'last_success': None, 'last_error': None}
+2024-12-02 17:29:11,753 - INFO - Raw Data: [('PEZZO_A1', Decimal('150.50'), Decimal('1200.00'), datetime.datetime(2024, 12, 2, 16, 45, 43, 914115), 'MACCHINA_01'), ('PEZZO_B2', Decimal('200.75'), Decimal('1150.50'), datetime.datetime(2024, 12, 2, 16, 45, 43, 914115), 'MACCHINA_02'), ('PEZZO_C3', Decimal('175.20'), Decimal('1185.75'), datetime.datetime(2024, 12, 2, 16, 45, 43, 914115), 'MACCHINA_03'), ('PEZZO_D4', Decimal('160.00'), Decimal('1190.00'), datetime.datetime(2024, 12, 2, 16, 45, 43, 914115), 'MACCHINA_01'), ('PEZZO_E5', Decimal('190.30'), Decimal('1175.25'), datetime.datetime(2024, 12, 2, 16, 45, 43, 914115), 'MACCHINA_02')]
+2024-12-02 17:29:11,756 - INFO - ID MySQL Processati: []
+2024-12-02 17:29:11,756 - WARNING - Nessun ID valido trovato in raw_data. Nessun aggiornamento eseguito in PostgreSQL.
+2024-12-02 17:29:11,793 - INFO - Connessione a MySQL chiusa.
+2024-12-02 17:29:11,794 - INFO - Connessione a PostgreSQL chiusa.
+2024-12-02 17:29:11,795 - INFO - 172.20.211.218 - - [02/Dec/2024 17:29:11] "GET /run HTTP/1.1" 200 -
+2024-12-02 17:29:44,997 - INFO -  * Detected change in 'Z:\\git\\Lab_Integrato\\ETLPython\\app.py', reloading
+2024-12-02 17:29:45,119 - INFO -  * Restarting with stat
+2024-12-02 17:29:46,443 - WARNING -  * Debugger is active!
+2024-12-02 17:29:46,449 - INFO -  * Debugger PIN: 392-371-963
+2024-12-02 17:30:13,453 - INFO -  * Detected change in 'Z:\\git\\Lab_Integrato\\ETLPython\\app.py', reloading
+2024-12-02 17:30:13,499 - INFO -  * Restarting with stat
+2024-12-02 17:30:14,755 - WARNING -  * Debugger is active!
+2024-12-02 17:30:14,760 - INFO -  * Debugger PIN: 392-371-963
+2024-12-02 17:30:16,110 - INFO - Connesso a PostgreSQL.
+2024-12-02 17:30:16,440 - INFO - Connesso a MySQL.
+2024-12-02 17:30:16,512 - INFO - Estrazione di 5 record da PostgreSQL.
+2024-12-02 17:30:16,513 - INFO - Trasformazione dei dati completata.
+2024-12-02 17:30:16,548 - INFO - Foreign key checks disabilitati.
+2024-12-02 17:30:16,620 - INFO - Inseriti 5 record in MySQL.
+2024-12-02 17:30:16,655 - INFO - Foreign key checks riabilitati.
+2024-12-02 17:30:16,656 - INFO - etl_status type: <class 'dict'>, value: {'running': True, 'last_run': '2024-12-02T16:30:15.856498', 'last_success': None, 'last_error': None}
+2024-12-02 17:30:16,656 - INFO - Raw Data: [(21, 'MACCHINA_01', 'PEZZO_A1', Decimal('150.50'), Decimal('1200.00'), datetime.datetime(2023, 10, 1, 8, 30), None, datetime.datetime(2024, 12, 2, 16, 45, 43, 914115), 'PENDING'), (22, 'MACCHINA_02', 'PEZZO_B2', Decimal('200.75'), Decimal('1150.50'), datetime.datetime(2023, 10, 1, 9, 15), 'Sovratemperatura', datetime.datetime(2024, 12, 2, 16, 45, 43, 914115), 'PENDING'), (23, 'MACCHINA_03', 'PEZZO_C3', Decimal('175.20'), Decimal('1185.75'), datetime.datetime(2023, 10, 1, 10, 5), None, datetime.datetime(2024, 12, 2, 16, 45, 43, 914115), 'PENDING'), (24, 'MACCHINA_01', 'PEZZO_D4', Decimal('160.00'), Decimal('1190.00'), datetime.datetime(2023, 10, 1, 10, 45), 'Anomalia peso', datetime.datetime(2024, 12, 2, 16, 45, 43, 914115), 'PENDING'), (25, 'MACCHINA_02', 'PEZZO_E5', Decimal('190.30'), Decimal('1175.25'), datetime.datetime(2023, 10, 1, 11, 30), None, datetime.datetime(2024, 12, 2, 16, 45, 43, 914115), 'PENDING')]
+2024-12-02 17:30:16,658 - INFO - ID MySQL Processati: [21, 22, 23, 24, 25]
+2024-12-02 17:30:16,733 - INFO - Aggiornato lo stato di 5 record in PostgreSQL.
+2024-12-02 17:30:16,771 - INFO - Connessione a MySQL chiusa.
+2024-12-02 17:30:16,771 - INFO - Connessione a PostgreSQL chiusa.
+2024-12-02 17:30:16,772 - INFO - 172.20.211.218 - - [02/Dec/2024 17:30:16] "GET /run HTTP/1.1" 200 -
+2024-12-02 17:33:26,541 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2024-12-02 17:33:26,541 - INFO - [33mPress CTRL+C to quit[0m
+2024-12-02 17:34:32,785 - INFO - Connesso a PostgreSQL.
+2024-12-02 17:34:33,210 - INFO - Connesso a MySQL.
+2024-12-02 17:34:33,282 - INFO - Estrazione di 0 record da PostgreSQL.
+2024-12-02 17:34:33,283 - INFO - Trasformazione dei dati completata.
+2024-12-02 17:34:33,318 - INFO - Foreign key checks disabilitati.
+2024-12-02 17:34:33,352 - INFO - Inseriti 0 record in MySQL.
+2024-12-02 17:34:33,387 - INFO - Foreign key checks riabilitati.
+2024-12-02 17:34:33,388 - INFO - etl_status type: <class 'dict'>, value: {'running': True, 'last_run': '2024-12-02T16:34:32.486742', 'last_success': None, 'last_error': None}
+2024-12-02 17:34:33,390 - INFO - Raw Data: []
+2024-12-02 17:34:33,390 - INFO - ID MySQL Processati: []
+2024-12-02 17:34:33,390 - WARNING - Nessun ID valido trovato in raw_data. Nessun aggiornamento eseguito in PostgreSQL.
+2024-12-02 17:34:33,426 - INFO - Connessione a MySQL chiusa.
+2024-12-02 17:34:33,427 - INFO - Connessione a PostgreSQL chiusa.
+2024-12-02 17:34:33,428 - INFO - 127.0.0.1 - - [02/Dec/2024 17:34:33] "GET /run HTTP/1.1" 200 -
+2024-12-03 09:09:18,506 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2024-12-03 09:09:18,506 - INFO - [33mPress CTRL+C to quit[0m
+2024-12-03 09:09:35,299 - INFO - Connesso a PostgreSQL.
+2024-12-03 09:09:35,890 - INFO - Connesso a MySQL.
+2024-12-03 09:09:35,964 - INFO - Estrazione di 0 record da PostgreSQL.
+2024-12-03 09:09:35,965 - INFO - Trasformazione dei dati completata.
+2024-12-03 09:09:36,006 - INFO - Foreign key checks disabilitati.
+2024-12-03 09:09:36,041 - INFO - Inseriti 0 record in MySQL.
+2024-12-03 09:09:36,075 - INFO - Foreign key checks riabilitati.
+2024-12-03 09:09:36,076 - INFO - etl_status type: <class 'dict'>, value: {'running': True, 'last_run': '2024-12-03T08:09:34.952353', 'last_success': None, 'last_error': None}
+2024-12-03 09:09:36,077 - INFO - Raw Data: []
+2024-12-03 09:09:36,077 - INFO - ID MySQL Processati: []
+2024-12-03 09:09:36,078 - WARNING - Nessun ID valido trovato in raw_data. Nessun aggiornamento eseguito in PostgreSQL.
+2024-12-03 09:09:36,114 - INFO - Connessione a MySQL chiusa.
+2024-12-03 09:09:36,116 - INFO - Connessione a PostgreSQL chiusa.
+2024-12-03 09:09:36,117 - INFO - 127.0.0.1 - - [03/Dec/2024 09:09:36] "GET /run HTTP/1.1" 200 -
+2024-12-03 09:10:35,667 - INFO - Connesso a PostgreSQL.
+2024-12-03 09:10:36,200 - INFO - Connesso a MySQL.
+2024-12-03 09:10:36,276 - INFO - Estrazione di 5 record da PostgreSQL.
+2024-12-03 09:10:36,277 - INFO - Trasformazione dei dati completata.
+2024-12-03 09:10:36,312 - INFO - Foreign key checks disabilitati.
+2024-12-03 09:10:36,577 - INFO - Inseriti 5 record in MySQL.
+2024-12-03 09:10:36,612 - INFO - Foreign key checks riabilitati.
+2024-12-03 09:10:36,613 - INFO - etl_status type: <class 'dict'>, value: {'running': True, 'last_run': '2024-12-03T08:10:35.384310', 'last_success': '2024-12-03T08:09:36.078147', 'last_error': None}
+2024-12-03 09:10:36,613 - INFO - Raw Data: [(26, 'MACCHINA_01', 'PEZZO_A1', Decimal('150.50'), Decimal('1200.00'), datetime.datetime(2023, 10, 1, 8, 30), None, datetime.datetime(2024, 12, 3, 9, 10, 30, 848081), 'PENDING'), (27, 'MACCHINA_02', 'PEZZO_B2', Decimal('200.75'), Decimal('1150.50'), datetime.datetime(2023, 10, 1, 9, 15), 'Sovratemperatura', datetime.datetime(2024, 12, 3, 9, 10, 30, 848081), 'PENDING'), (28, 'MACCHINA_03', 'PEZZO_C3', Decimal('175.20'), Decimal('1185.75'), datetime.datetime(2023, 10, 1, 10, 5), None, datetime.datetime(2024, 12, 3, 9, 10, 30, 848081), 'PENDING'), (29, 'MACCHINA_01', 'PEZZO_D4', Decimal('160.00'), Decimal('1190.00'), datetime.datetime(2023, 10, 1, 10, 45), 'Anomalia peso', datetime.datetime(2024, 12, 3, 9, 10, 30, 848081), 'PENDING'), (30, 'MACCHINA_02', 'PEZZO_E5', Decimal('190.30'), Decimal('1175.25'), datetime.datetime(2023, 10, 1, 11, 30), None, datetime.datetime(2024, 12, 3, 9, 10, 30, 848081), 'PENDING')]
+2024-12-03 09:10:36,614 - INFO - ID MySQL Processati: [26, 27, 28, 29, 30]
+2024-12-03 09:10:36,713 - INFO - Aggiornato lo stato di 5 record in PostgreSQL.
+2024-12-03 09:10:36,762 - INFO - Connessione a MySQL chiusa.
+2024-12-03 09:10:36,762 - INFO - Connessione a PostgreSQL chiusa.
+2024-12-03 09:10:36,764 - INFO - 127.0.0.1 - - [03/Dec/2024 09:10:36] "GET /run HTTP/1.1" 200 -
+2024-12-03 09:11:50,787 - INFO - Connesso a PostgreSQL.
+2024-12-03 09:11:51,045 - INFO - Connesso a MySQL.
+2024-12-03 09:11:51,120 - INFO - Estrazione di 0 record da PostgreSQL.
+2024-12-03 09:11:51,121 - INFO - Trasformazione dei dati completata.
+2024-12-03 09:11:51,156 - INFO - Foreign key checks disabilitati.
+2024-12-03 09:11:51,191 - INFO - Inseriti 0 record in MySQL.
+2024-12-03 09:11:51,226 - INFO - Foreign key checks riabilitati.
+2024-12-03 09:11:51,227 - INFO - etl_status type: <class 'dict'>, value: {'running': True, 'last_run': '2024-12-03T08:11:50.533620', 'last_success': '2024-12-03T08:10:36.714846', 'last_error': None}
+2024-12-03 09:11:51,228 - INFO - Raw Data: []
+2024-12-03 09:11:51,228 - INFO - ID MySQL Processati: []
+2024-12-03 09:11:51,229 - WARNING - Nessun ID valido trovato in raw_data. Nessun aggiornamento eseguito in PostgreSQL.
+2024-12-03 09:11:51,264 - INFO - Connessione a MySQL chiusa.
+2024-12-03 09:11:51,264 - INFO - Connessione a PostgreSQL chiusa.
+2024-12-03 09:11:51,265 - INFO - 127.0.0.1 - - [03/Dec/2024 09:11:51] "GET /run HTTP/1.1" 200 -
+2024-12-03 09:11:59,219 - INFO - Connesso a PostgreSQL.
+2024-12-03 09:11:59,474 - INFO - Connesso a MySQL.
+2024-12-03 09:11:59,547 - INFO - Estrazione di 5 record da PostgreSQL.
+2024-12-03 09:11:59,547 - INFO - Trasformazione dei dati completata.
+2024-12-03 09:11:59,583 - INFO - Foreign key checks disabilitati.
+2024-12-03 09:11:59,656 - INFO - Inseriti 5 record in MySQL.
+2024-12-03 09:11:59,692 - INFO - Foreign key checks riabilitati.
+2024-12-03 09:11:59,693 - INFO - etl_status type: <class 'dict'>, value: {'running': True, 'last_run': '2024-12-03T08:11:58.978079', 'last_success': '2024-12-03T08:11:51.229648', 'last_error': None}
+2024-12-03 09:11:59,693 - INFO - Raw Data: [(31, 'MACCHINA_01', 'PEZZO_A1', Decimal('150.50'), Decimal('1200.00'), datetime.datetime(2023, 10, 1, 8, 30), None, datetime.datetime(2024, 12, 3, 9, 11, 56, 190101), 'PENDING'), (32, 'MACCHINA_02', 'PEZZO_B2', Decimal('200.75'), Decimal('1150.50'), datetime.datetime(2023, 10, 1, 9, 15), 'Sovratemperatura', datetime.datetime(2024, 12, 3, 9, 11, 56, 190101), 'PENDING'), (33, 'MACCHINA_03', 'PEZZO_C3', Decimal('175.20'), Decimal('1185.75'), datetime.datetime(2023, 10, 1, 10, 5), None, datetime.datetime(2024, 12, 3, 9, 11, 56, 190101), 'PENDING'), (34, 'MACCHINA_01', 'PEZZO_D4', Decimal('160.00'), Decimal('1190.00'), datetime.datetime(2023, 10, 1, 10, 45), 'Anomalia peso', datetime.datetime(2024, 12, 3, 9, 11, 56, 190101), 'PENDING'), (35, 'MACCHINA_02', 'PEZZO_E5', Decimal('190.30'), Decimal('1175.25'), datetime.datetime(2023, 10, 1, 11, 30), None, datetime.datetime(2024, 12, 3, 9, 11, 56, 190101), 'PENDING')]
+2024-12-03 09:11:59,694 - INFO - ID MySQL Processati: [31, 32, 33, 34, 35]
+2024-12-03 09:11:59,768 - INFO - Aggiornato lo stato di 5 record in PostgreSQL.
+2024-12-03 09:11:59,804 - INFO - Connessione a MySQL chiusa.
+2024-12-03 09:11:59,804 - INFO - Connessione a PostgreSQL chiusa.
+2024-12-03 09:11:59,805 - INFO - 127.0.0.1 - - [03/Dec/2024 09:11:59] "GET /run HTTP/1.1" 200 -
+2024-12-03 09:23:15,376 - INFO - Connesso a PostgreSQL.
+2024-12-03 09:23:15,636 - INFO - Connesso a MySQL.
+2024-12-03 09:23:15,711 - INFO - Estrazione di 5 record da PostgreSQL.
+2024-12-03 09:23:15,711 - INFO - Trasformazione dei dati completata.
+2024-12-03 09:23:15,748 - INFO - Foreign key checks disabilitati.
+2024-12-03 09:23:15,821 - INFO - Inseriti 5 record in MySQL.
+2024-12-03 09:23:15,858 - INFO - Foreign key checks riabilitati.
+2024-12-03 09:23:15,858 - INFO - etl_status type: <class 'dict'>, value: {'running': True, 'last_run': '2024-12-03T08:23:15.105627', 'last_success': '2024-12-03T08:11:59.769109', 'last_error': None}
+2024-12-03 09:23:15,859 - INFO - Raw Data: [(36, 'MACCHINA_01', 'PEZZO_A1', Decimal('150.50'), Decimal('1200.00'), datetime.datetime(2023, 10, 1, 8, 30), None, datetime.datetime(2024, 12, 3, 9, 23, 10, 399579), 'PENDING'), (37, 'MACCHINA_02', 'PEZZO_B2', Decimal('200.75'), Decimal('1150.50'), datetime.datetime(2023, 10, 1, 9, 15), 'Sovratemperatura', datetime.datetime(2024, 12, 3, 9, 23, 10, 399579), 'PENDING'), (38, 'MACCHINA_03', 'PEZZO_C3', Decimal('175.20'), Decimal('1185.75'), datetime.datetime(2023, 10, 1, 10, 5), None, datetime.datetime(2024, 12, 3, 9, 23, 10, 399579), 'PENDING'), (39, 'MACCHINA_01', 'PEZZO_D4', Decimal('160.00'), Decimal('1190.00'), datetime.datetime(2023, 10, 1, 10, 45), 'Anomalia peso', datetime.datetime(2024, 12, 3, 9, 23, 10, 399579), 'PENDING'), (40, 'MACCHINA_02', 'PEZZO_E5', Decimal('190.30'), Decimal('1175.25'), datetime.datetime(2023, 10, 1, 11, 30), None, datetime.datetime(2024, 12, 3, 9, 23, 10, 399579), 'PENDING')]
+2024-12-03 09:23:15,860 - INFO - ID MySQL Processati: [36, 37, 38, 39, 40]
+2024-12-03 09:23:15,939 - INFO - Aggiornato lo stato di 5 record in PostgreSQL.
+2024-12-03 09:23:15,975 - INFO - Connessione a MySQL chiusa.
+2024-12-03 09:23:15,976 - INFO - Connessione a PostgreSQL chiusa.
+2024-12-03 09:23:15,976 - INFO - 127.0.0.1 - - [03/Dec/2024 09:23:15] "GET /run HTTP/1.1" 200 -
+2024-12-03 09:25:25,351 - INFO - 127.0.0.1 - - [03/Dec/2024 09:25:25] "[33mGET /processed-data HTTP/1.1[0m" 404 -
+2024-12-03 09:25:47,524 - INFO - 127.0.0.1 - - [03/Dec/2024 09:25:47] "[33mGET /processed-data HTTP/1.1[0m" 404 -
+2024-12-03 09:26:07,495 - INFO - 127.0.0.1 - - [03/Dec/2024 09:26:07] "GET /status HTTP/1.1" 200 -
+2024-12-03 09:27:33,828 - INFO - Connesso a PostgreSQL.
+2024-12-03 09:27:34,096 - INFO - Connesso a MySQL.
+2024-12-03 09:27:34,166 - INFO - Estrazione di 0 record da PostgreSQL.
+2024-12-03 09:27:34,167 - INFO - Trasformazione dei dati completata.
+2024-12-03 09:27:34,203 - INFO - Foreign key checks disabilitati.
+2024-12-03 09:27:34,239 - INFO - Inseriti 0 record in MySQL.
+2024-12-03 09:27:34,276 - INFO - Foreign key checks riabilitati.
+2024-12-03 09:27:34,277 - INFO - etl_status type: <class 'dict'>, value: {'running': True, 'last_run': '2024-12-03T08:27:33.591402', 'last_success': '2024-12-03T08:23:15.940871', 'last_error': None}
+2024-12-03 09:27:34,277 - INFO - Raw Data: []
+2024-12-03 09:27:34,278 - INFO - ID MySQL Processati: []
+2024-12-03 09:27:34,278 - WARNING - Nessun ID valido trovato in raw_data. Nessun aggiornamento eseguito in PostgreSQL.
+2024-12-03 09:27:34,316 - INFO - Connessione a MySQL chiusa.
+2024-12-03 09:27:34,316 - INFO - Connessione a PostgreSQL chiusa.
+2024-12-03 09:27:34,317 - INFO - 127.0.0.1 - - [03/Dec/2024 09:27:34] "GET /run HTTP/1.1" 200 -
+2024-12-03 09:27:43,145 - INFO - 127.0.0.1 - - [03/Dec/2024 09:27:43] "[33mGET /processed-data HTTP/1.1[0m" 404 -
+2024-12-03 09:27:59,233 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2024-12-03 09:27:59,233 - INFO - [33mPress CTRL+C to quit[0m
+2024-12-03 09:28:19,712 - INFO - 127.0.0.1 - - [03/Dec/2024 09:28:19] "GET /processed-data HTTP/1.1" 200 -
+2024-12-03 09:29:12,031 - INFO - Connesso a PostgreSQL.
+2024-12-03 09:29:12,444 - INFO - Connesso a MySQL.
+2024-12-03 09:29:12,514 - INFO - Estrazione di 5 record da PostgreSQL.
+2024-12-03 09:29:12,514 - INFO - Trasformazione dei dati completata.
+2024-12-03 09:29:12,548 - INFO - Foreign key checks disabilitati.
+2024-12-03 09:29:12,618 - INFO - Inseriti 5 record in MySQL.
+2024-12-03 09:29:12,653 - INFO - Foreign key checks riabilitati.
+2024-12-03 09:29:12,653 - INFO - etl_status type: <class 'dict'>, value: {'running': True, 'last_run': '2024-12-03T08:29:11.723932', 'last_success': None, 'last_error': None}
+2024-12-03 09:29:12,654 - INFO - ID MySQL Processati: [41, 42, 43, 44, 45]
+2024-12-03 09:29:12,722 - INFO - Aggiornato lo stato di 5 record in PostgreSQL.
+2024-12-03 09:29:12,758 - INFO - Connessione a MySQL chiusa.
+2024-12-03 09:29:12,760 - INFO - Connessione a PostgreSQL chiusa.
+2024-12-03 09:29:12,760 - INFO - 127.0.0.1 - - [03/Dec/2024 09:29:12] "GET /run HTTP/1.1" 200 -
+2024-12-03 09:29:22,880 - INFO - 127.0.0.1 - - [03/Dec/2024 09:29:22] "GET /processed-data HTTP/1.1" 200 -
