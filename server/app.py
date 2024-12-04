@@ -57,6 +57,9 @@ def enable_foreign_keys(cursor):
 
 def save_records(cursor, connection, query, records, retries=3):
     """Funzione generica per salvare record nel database con retry."""
+    logging.debug(f"Query: {query}")
+    logging.debug(f"Esempio di record: {records[:1]}")  # Mostra il primo record
+
     for attempt in range(1, retries + 1):
         try:
             cursor.executemany(query, records)
@@ -179,10 +182,10 @@ def run_etl():
             INSERT INTO Forgiatura (codice_pezzo, peso_effettivo, temperatura_effettiva, timestamp, codice_macchinario)
             VALUES (%s, %s, %s, %s, %s)
             """
-            if not save_records(my_cursor, my_conn, insert_query_valid, transformed_data):
-                etl_status['last_error'] = 'Errore durante l\'inserimento dei dati validi in MySQL.'
-            else:
+            if save_records(my_cursor, my_conn, insert_query_valid, transformed_data):
                 mysql_insert_success = True
+            else:
+                etl_status['last_error'] = 'Errore durante l\'inserimento dei dati validi in MySQL.'
         except Exception as e:
             logging.error(f'Errore durante il salvataggio dei dati validi: {e}')
         finally:
@@ -195,13 +198,14 @@ def run_etl():
             INSERT INTO dati_anomali (codice_pezzo, peso_effettivo, temperatura_effettiva, timestamp, codice_macchinario, tipo_anomalia)
             VALUES (%s, %s, %s, %s, %s, %s)
             """
-            if not save_records(my_cursor, my_conn, insert_query_invalid, invalid_records):
+            if save_records(my_cursor, my_conn, insert_query_invalid, invalid_records):
+                mysql_insert_success = True
+            else:
                 etl_status['last_error'] = 'Errore durante l\'inserimento dei dati non validi in MySQL.'
                 mysql_insert_success = False
-            else:
-                mysql_insert_success = True
         except Exception as e:
             logging.error(f'Errore durante il salvataggio dei dati non validi: {e}')
+            etl_status['last_error'] = str(e)
         finally:
             enable_foreign_keys(my_cursor)
 
