@@ -199,6 +199,19 @@ def run_etl():
 
         mysql_insert_success = False
 
+        # Trasformazione dei record non validi
+        invalid_records_tuples = [
+            (
+                record['id_pezzo'],
+                record['peso_effettivo'],
+                record['temperatura_effettiva'],
+                record['timestamp_ricevuto'],
+                record['id_macchina'],
+                record['tipo_anomalia']
+            )
+            for record in invalid_records
+        ]
+
         # Inserimento dei dati validi
         try:
             disable_foreign_keys(my_cursor)
@@ -222,7 +235,7 @@ def run_etl():
             INSERT INTO dati_anomali (codice_pezzo, peso_effettivo, temperatura_effettiva, timestamp, codice_macchinario, tipo_anomalia)
             VALUES (%s, %s, %s, %s, %s, %s)
             """
-            if save_records(my_cursor, my_conn, insert_query_invalid, invalid_records):
+            if save_records(my_cursor, my_conn, insert_query_invalid, invalid_records_tuples):
                 mysql_insert_success = True
             else:
                 etl_status['last_error'] = 'Errore durante l\'inserimento dei dati non validi in MySQL.'
