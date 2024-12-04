@@ -34,6 +34,14 @@ data_processed = {
     'data':[]
 }
 
+data_forgiatura = {
+    'data':[]
+}
+
+data_anomali = {
+    'data':[]
+}
+
 # PostgreSQL connection parameters
 PG_HOST = os.getenv('PG_HOST')
 PG_PORT = os.getenv('PG_PORT')
@@ -134,6 +142,35 @@ def save_records(cursor, connection, query, records, retries=3):
                 logging.error('Tutti i tentativi di inserimento in MySQL sono falliti.')
                 raise
     return False
+
+def show_tables()
+        # Connessione a MySQL
+        my_conn = mysql.connector.connect(
+            host=MYSQL_HOST,
+            port=MYSQL_PORT,
+            database=MYSQL_DATABASE,
+            user=MYSQL_USER,
+            password=MYSQL_PASSWORD
+        )
+        my_cursor = my_conn.cursor()
+        logging.info('Connesso a MySQL.')
+
+        my_cursor.execute("SELECT * FROM Forgiatura")
+        raw_data = my_cursor.fetchall()
+        colnames = [desc[0] for desc in my_cursor.description]
+
+    data_forgiatura = raw_data
+
+    my_cursor.execute("SELECT * FROM dati_anomali")
+    raw_data = my_cursor.fetchall()
+    colnames = [desc[0] for desc in my_cursor.description]
+
+    data_anomali = raw_data
+
+    if 'my_cursor' in locals() and my_cursor:
+        my_cursor.close()
+    if 'my_conn' in locals() and my_conn.is_connected():
+        my_conn.close()
 
 def run_etl():
     global etl_status
@@ -355,6 +392,11 @@ def get_status():
 def run():
     run_etl()
     return jsonify(etl_status, data_processed), 200
+
+@app.route('/data', methods=['GET'])
+def data():
+    show_tables()
+    return jsonify(etl_status, data1, data2), 200
 
 @app.route('/clear-logs', methods=['GET', 'POST'])
 def clear_logs():
