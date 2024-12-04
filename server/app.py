@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from datetime import datetime
 from flask import Flask, jsonify, request
 from threading import Thread
+import math
 
 # Configure logging
 logging.basicConfig(
@@ -83,7 +84,6 @@ def run_etl():
         logging.info('Connesso a MySQL.')
 
         # Estrazione dei dati dalla tabella staging
-        # pg_cursor.execute("SELECT * FROM RawForgiatura WHERE stato_processo = 'PENDING'")
         pg_cursor.execute("SELECT * FROM RawForgiatura")
         raw_data = pg_cursor.fetchall()
         colnames = [desc[0] for desc in pg_cursor.description]
@@ -91,9 +91,16 @@ def run_etl():
 
         # Trasformazione dei dati
         transformed_data = []
+        invalid_records = []  # Per salvare i record con NaN/NULL
         for row in raw_data:
             data = dict(zip(colnames, row))
             try:
+                # Controllo se i valori sono NaN o NULL
+                if any(value is None or (isinstance(value, float) and math.isnan(value)) for value in data.values()):
+                    logging.warning(f'Record con valori NaN/NULL rilevato: {data}')
+                    invalid_records.append(data)  # Salva il record per ulteriori analisi
+                    continue  # Salta questo record
+
                 if isinstance(data['timestamp_ricevuto'], str):
                     data['timestamp_ricevuto'] = datetime.strptime(data['timestamp_ricevuto'], '%Y-%m-%d %H:%M:%S')
 
@@ -109,95 +116,69 @@ def run_etl():
                 record_id = data.get('id', 'N/A')
                 logging.error(f'Errore nella trasformazione dei dati per il record {record_id}: chiave mancante {e}')
                 continue
+
         logging.info('Trasformazione dei dati completata.')
 
-        data_processed['data'] = transformed_data
+        # Log dei record invalidi
+        if invalid_records:
+            logging.warning(f'Trovati {len(invalid_records)} record con valori NaN/NULL.')
 
         # Caricamento dei dati in MySQL
         try:
             disable_foreign_keys(my_cursor)
-
             insert_query = """
             INSERT INTO Forgiatura (codice_pezzo, peso_effettivo, temperatura_effettiva, timestamp, codice_macchinario)
             VALUES (%s, %s, %s, %s, %s)
             """
-            my_cursor.executemany(insert_query, transformed_data)
-            my_conn.commit()
-            logging.info(f'Inseriti {my_cursor.rowcount} record in MySQL.')
 
+            retries = 3  # Numero massimo di tentativi
+            for attempt in range(1, retries + 1):
+                try:
+                    my_cursor.executemany(insert_query, transformed_data)
+                    my_conn.commit()
+                    logging.info(f'Inseriti {my_cursor.rowcount} record in MySQL al tentativo {attempt}.')
+                    break
+                except mysql.connector.Error as e:
+                    logging.error(f'Errore durante l\'inserimento dei dati in MySQL al tentativo {attempt}: {e}')
+                    if my_conn.is_connected():
+                        my_conn.rollback()
+                    if attempt == retries:
+                        logging.error('Tutti i tentativi di inserimento in MySQL sono falliti.')
+                        etl_status['last_error'] = f'Errore persistente durante l\'inserimento in MySQL: {e}'
+                        raise
+        finally:
             enable_foreign_keys(my_cursor)
 
-            logging.info(f"etl_status type: {type(etl_status)}, value: {etl_status}")
+        # Eliminazione dei dati solo se l'inserimento ha avuto successo
+        delete_query = """
+        DELETE FROM RawForgiatura
+        WHERE id = ANY(%s)
+        """
+        pg_cursor.execute(delete_query, ([row[0] for row in raw_data],))
+        pg_conn.commit()
+        logging.info(f'Eliminati {pg_cursor.rowcount} record processati dal database di staging.')
 
-            # Preparazione degli ID processati
-            processed_ids = [data[0] for data in raw_data if isinstance(data[0], int)]
-            logging.info(f"ID MySQL Processati: {processed_ids}")
-
-            '''
-            if not processed_ids:
-                logging.warning('Nessun ID valido trovato in raw_data. Nessun aggiornamento eseguito in PostgreSQL.')
-            else:
-                update_query = """
-                UPDATE RawForgiatura
-                SET stato_processo = %s
-                WHERE id = ANY(%s)
-                """
-                pg_cursor.execute(update_query, ('PROCESSED', processed_ids))
-                pg_conn.commit()
-                logging.info(f'Aggiornato lo stato di {pg_cursor.rowcount} record in PostgreSQL.')
-
-            etl_status['last_success'] = datetime.utcnow().isoformat()
-            etl_status['last_error'] = None
-            '''
-
-            if processed_ids:
-                delete_query = """
-                DELETE FROM RawForgiatura
-                WHERE id = ANY(%s)
-                """
-                pg_cursor.execute(delete_query, (processed_ids,))
-                pg_conn.commit()
-                logging.info(f'Eliminati {pg_cursor.rowcount} record processati dal database di staging.')
-
-            etl_status['last_success'] = datetime.utcnow().isoformat()
-            etl_status['last_error'] = None
-
-        except mysql.connector.Error as e:
-            logging.error(f'Errore durante l\'inserimento dei dati in MySQL: {e}')
-            if my_conn.is_connected():
-                my_conn.rollback()
-            etl_status['last_error'] = str(e)
-
-        except psycopg2.Error as e:
-            logging.error(f'Errore durante l\'aggiornamento dei dati in PostgreSQL: {e}')
-            if pg_conn:
-                pg_conn.rollback()
-            etl_status['last_error'] = str(e)
-
-        except Exception as e:
-            logging.error(f'Errore generico: {e}')
-            etl_status['last_error'] = str(e)
-
-        finally:
-            # Chiusura delle connessioni MySQL
-            if 'my_cursor' in locals() and my_cursor:
-                my_cursor.close()
-            if 'my_conn' in locals() and my_conn.is_connected():
-                my_conn.close()
-                logging.info('Connessione a MySQL chiusa.')
-
-            # Chiusura delle connessioni PostgreSQL
-            if 'pg_cursor' in locals() and pg_cursor:
-                pg_cursor.close()
-            if 'pg_conn' in locals() and pg_conn:
-                pg_conn.close()
-                logging.info('Connessione a PostgreSQL chiusa.')
+        etl_status['last_success'] = datetime.utcnow().isoformat()
+        etl_status['last_error'] = None
 
     except Exception as e:
-        logging.error(f'Connessione ai database fallita: {e}')
+        logging.error(f'Errore generico: {e}')
         etl_status['last_error'] = str(e)
 
-    etl_status['running'] = False
+    finally:
+        etl_status['running'] = False
+
+        # Chiusura delle connessioni
+        if 'my_cursor' in locals() and my_cursor:
+            my_cursor.close()
+        if 'my_conn' in locals() and my_conn.is_connected():
+            my_conn.close()
+            logging.info('Connessione a MySQL chiusa.')
+        if 'pg_cursor' in locals() and pg_cursor:
+            pg_cursor.close()
+        if 'pg_conn' in locals() and pg_conn:
+            pg_conn.close()
+            logging.info('Connessione a PostgreSQL chiusa.')
 
 @app.route('/run-etl', methods=['POST'])
 def trigger_etl():
