@@ -143,34 +143,36 @@ def save_records(cursor, connection, query, records, retries=3):
                 raise
     return False
 
-def show_tables()
-        # Connessione a MySQL
-        my_conn = mysql.connector.connect(
-            host=MYSQL_HOST,
-            port=MYSQL_PORT,
-            database=MYSQL_DATABASE,
-            user=MYSQL_USER,
-            password=MYSQL_PASSWORD
-        )
-        my_cursor = my_conn.cursor()
-        logging.info('Connesso a MySQL.')
+def show_tables():
+    # Connessione a MySQL
+    my_conn = mysql.connector.connect(
+        host=MYSQL_HOST,
+        port=MYSQL_PORT,
+        database=MYSQL_DATABASE,
+        user=MYSQL_USER,
+        password=MYSQL_PASSWORD
+    )
+    my_cursor = my_conn.cursor()
+    logging.info('Connesso a MySQL.')
 
-        my_cursor.execute("SELECT * FROM Forgiatura")
-        raw_data = my_cursor.fetchall()
-        colnames = [desc[0] for desc in my_cursor.description]
+    # Dati dalla tabella Forgiatura
+    my_cursor.execute("SELECT * FROM Forgiatura")
+    data_forgiatura = my_cursor.fetchall()
+    colnames_forgiatura = [desc[0] for desc in my_cursor.description]
 
-    data_forgiatura = raw_data
-
+    # Dati dalla tabella dati_anomali
     my_cursor.execute("SELECT * FROM dati_anomali")
-    raw_data = my_cursor.fetchall()
-    colnames = [desc[0] for desc in my_cursor.description]
+    data_anomali = my_cursor.fetchall()
+    colnames_anomali = [desc[0] for desc in my_cursor.description]
 
-    data_anomali = raw_data
-
+    # Chiusura connessione
     if 'my_cursor' in locals() and my_cursor:
         my_cursor.close()
     if 'my_conn' in locals() and my_conn.is_connected():
         my_conn.close()
+
+    # Ritorno dei dati e delle colonne
+    return (data_forgiatura, colnames_forgiatura), (data_anomali, colnames_anomali)
 
 def run_etl():
     global etl_status
@@ -395,8 +397,24 @@ def run():
 
 @app.route('/data', methods=['GET'])
 def data():
-    show_tables()
-    return jsonify(etl_status, data1, data2), 200
+    try:
+        (data_forgiatura, colnames_forgiatura), (data_anomali, colnames_anomali) = show_tables()
+
+        # Prepara i dati in formato leggibile per JSON
+        result = {
+            "Forgiatura": {
+                "columns": colnames_forgiatura,
+                "rows": data_forgiatura
+            },
+            "DatiAnomali": {
+                "columns": colnames_anomali,
+                "rows": data_anomali
+            }
+        }
+        return jsonify(result), 200
+    except Exception as e:
+        logging.error(f"Errore durante la lettura dei dati: {e}")
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/clear-logs', methods=['GET', 'POST'])
 def clear_logs():
