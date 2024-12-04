@@ -79,6 +79,42 @@ def enable_foreign_keys(cursor):
     cursor.execute("SET FOREIGN_KEY_CHECKS = 1;")
     logging.info("Foreign key checks riabilitati.")
 
+def parse_timestamp(timestamp_str):
+    try:
+        # Try parsing with microseconds
+        try:
+            parsed_timestamp = datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S.%f')
+            return parsed_timestamp
+        except ValueError:
+            # If microseconds parsing fails, try without microseconds
+            parsed_timestamp = datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S')
+            return parsed_timestamp
+    except ValueError as e:
+        logging.error(f"Unable to parse timestamp: {timestamp_str}")
+        raise
+
+def validate_timestamp(timestamp_str, tolerance_minutes=60):
+    try:
+        parsed_timestamp = parse_timestamp(timestamp_str)
+        now = datetime.utcnow()
+        
+        # Increased tolerance to 60 minutes
+        tolerance = timedelta(minutes=tolerance_minutes)
+
+        # Debug logging
+        print(f"Parsed Timestamp: {parsed_timestamp}")
+        print(f"Current UTC Time: {now}")
+        print(f"Timestamp diff from now: {parsed_timestamp - now}")
+
+        # Check if timestamp is within tolerance of current time
+        if abs(parsed_timestamp - now) > tolerance:
+            print(f"Timestamp is more than {tolerance_minutes} minutes from current time!")
+            return False
+        return True
+    except Exception as e:
+        print(f"Timestamp validation error: {e}")
+        return False
+
 def save_records(cursor, connection, query, records, retries=3):
     """Funzione generica per salvare record nel database con retry."""
     logging.info(f"Query: {query}")
@@ -165,24 +201,23 @@ def run_etl():
                     # tipo_anomalia.append("ID macchina non valido")
                 
                 try:
-                    logging.debug(f"Timestamp originale: {data['timestamp_ricevuto']}")
+                    logging.info(f"Timestamp originale: {data['timestamp_ricevuto']}")
 
-                    # Parsing del timestamp
+                    # Parsing e validazione del timestamp
                     if isinstance(data['timestamp_ricevuto'], datetime):
                         parsed_timestamp = data['timestamp_ricevuto']
+                        is_valid_timestamp = True
                     else:
-                        parsed_timestamp = datetime.strptime(data['timestamp_ricevuto'], '%Y-%m-%d %H:%M:%S.%f')
+                        is_valid_timestamp, parsed_timestamp = validate_timestamp(data['timestamp_ricevuto'])
 
-                    # Controllo se il timestamp è nel futuro (aggiungi tolleranza)
-                    now = datetime.utcnow()
-                    tolerance = timedelta(seconds=1)  # 1 secondo di tolleranza
-                    if parsed_timestamp > now + tolerance:
-                        tipo_anomalia.append("Timestamp ricevuto nel futuro")
+                    # Se il timestamp non è valido, aggiungi l'anomalia
+                    if not is_valid_timestamp:
+                        tipo_anomalia.append("Timestamp ricevuto non valido o fuori intervallo")
 
                     # Salva il timestamp parsato nel dizionario
                     data['timestamp_ricevuto'] = parsed_timestamp
 
-                    logging.debug(f"Timestamp parsato: {data['timestamp_ricevuto']}, Ora attuale (UTC): {now}")
+                    logging.info(f"Timestamp parsato: {data['timestamp_ricevuto']}, Ora attuale (UTC): {datetime.utcnow()}")
                 except (ValueError, TypeError) as e:
                     logging.error(f"Errore nel parsing del timestamp '{data['timestamp_ricevuto']}': {e}")
                     tipo_anomalia.append("Timestamp ricevuto non valido")
