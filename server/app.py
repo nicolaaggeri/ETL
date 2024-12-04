@@ -167,17 +167,24 @@ def run_etl():
                 try:
                     logging.info(f"Timestamp originale: {data['timestamp_ricevuto']}")
                     
-                    # Prova con millisecondi
-                    try:
-                        data['timestamp_ricevuto'] = datetime.strptime(data['timestamp_ricevuto'], '%Y-%m-%d %H:%M:%S.%f')
-                        logging.info(f"Timestamp modificato: {data['timestamp_ricevuto']}")
-                    except ValueError:
-                        # Prova senza millisecondi
-                        data['timestamp_ricevuto'] = datetime.strptime(data['timestamp_ricevuto'], '%Y-%m-%d %H:%M:%S')
-                    
+                    # Controlla se è già un oggetto datetime
+                    if isinstance(data['timestamp_ricevuto'], datetime):
+                        timestamp = data['timestamp_ricevuto']
+                    else:
+                        # Parsing del timestamp (prova con millisecondi)
+                        try:
+                            timestamp = datetime.strptime(data['timestamp_ricevuto'], '%Y-%m-%d %H:%M:%S.%f')
+                        except ValueError:
+                            # Prova senza millisecondi
+                            timestamp = datetime.strptime(data['timestamp_ricevuto'], '%Y-%m-%d %H:%M:%S')
+
                     # Controllo se il timestamp è nel futuro (UTC)
-                    if data['timestamp_ricevuto'] > datetime.utcnow():
+                    if timestamp > datetime.utcnow():
                         tipo_anomalia.append("Timestamp ricevuto nel futuro")
+                        logging.info(f"Timestamp parsato: {data['timestamp_ricevuto']}, Ora attuale (UTC): {datetime.utcnow()}")
+                    else:
+                        data['timestamp_ricevuto'] = timestamp  # Assegna il timestamp parsato
+                        logging.info(f"Timestamp parsato: {data['timestamp_ricevuto']}, Ora attuale (UTC): {datetime.utcnow()}")
                 except (ValueError, TypeError) as e:
                     logging.error(f"Errore nel parsing del timestamp '{data['timestamp_ricevuto']}': {e}")
                     tipo_anomalia.append("Timestamp ricevuto non valido")
