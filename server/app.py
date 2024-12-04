@@ -81,8 +81,8 @@ def enable_foreign_keys(cursor):
 
 def save_records(cursor, connection, query, records, retries=3):
     """Funzione generica per salvare record nel database con retry."""
-    logging.debug(f"Query: {query}")
-    logging.debug(f"Esempio di record: {records[:1]}")  # Mostra il primo record
+    logging.info(f"Query: {query}")
+    logging.info(f"Esempio di record: {records[:1]}")  # Mostra il primo record
 
     for attempt in range(1, retries + 1):
         try:
@@ -291,7 +291,7 @@ def run():
     run_etl()
     return jsonify(etl_status, data_processed), 200
 
-@app.route('/clear-logs', methods=['POST'])
+@app.route('/clear-logs', methods=['GET', 'POST'])
 def clear_logs():
     log_file_path = 'logs/etl.log'  # Percorso del file di log
     clear_log_file(log_file_path)
