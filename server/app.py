@@ -170,6 +170,8 @@ def run_etl():
         if invalid_records:
             logging.warning(f'Trovati {len(invalid_records)} record con valori NaN/NULL.')
 
+        mysql_insert_success = False
+
         # Inserimento dei dati validi
         try:
             disable_foreign_keys(my_cursor)
@@ -179,6 +181,8 @@ def run_etl():
             """
             if not save_records(my_cursor, my_conn, insert_query_valid, transformed_data):
                 etl_status['last_error'] = 'Errore durante l\'inserimento dei dati validi in MySQL.'
+            else:
+                mysql_insert_success = True
         except Exception as e:
             logging.error(f'Errore durante il salvataggio dei dati validi: {e}')
         finally:
@@ -189,26 +193,35 @@ def run_etl():
             disable_foreign_keys(my_cursor)
             insert_query_invalid = """
             INSERT INTO dati_anomali (codice_pezzo, peso_effettivo, temperatura_effettiva, timestamp, codice_macchinario, tipo_anomalia)
-            VALUES (%s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s)
             """
             if not save_records(my_cursor, my_conn, insert_query_invalid, invalid_records):
                 etl_status['last_error'] = 'Errore durante l\'inserimento dei dati non validi in MySQL.'
+                mysql_insert_success = False
+            else:
+                mysql_insert_success = True
         except Exception as e:
             logging.error(f'Errore durante il salvataggio dei dati non validi: {e}')
         finally:
             enable_foreign_keys(my_cursor)
 
-        # Eliminazione dei dati solo se l'inserimento ha avuto successo
-        delete_query = """
-        DELETE FROM RawForgiatura
-        WHERE id = ANY(%s)
-        """
-        pg_cursor.execute(delete_query, ([row[0] for row in raw_data],))
-        pg_conn.commit()
-        logging.info(f'Eliminati {pg_cursor.rowcount} record processati dal database di staging.')
+        if mysql_insert_success:
+            try:
+                # Eliminazione dei dati solo se l'inserimento ha avuto successo
+                delete_query = """
+                DELETE FROM RawForgiatura
+                WHERE id = ANY(%s)
+                """
+                pg_cursor.execute(delete_query, ([row[0] for row in raw_data],))
+                pg_conn.commit()
+                logging.info(f'Eliminati {pg_cursor.rowcount} record processati dal database di staging.')
 
-        etl_status['last_success'] = datetime.utcnow().isoformat()
-        etl_status['last_error'] = None
+                etl_status['last_success'] = datetime.utcnow().isoformat()
+                etl_status['last_error'] = None
+            except psycog2.Error as e:
+                logging.error(f'Errore durante l\'eliminazione dei dati in Postgres: {e}')
+                etl_status['last_error'] = f'Errore durante l\'eliminazione in PostgreSQL: {e}'
+                pg_conn.rollback()
 
     except Exception as e:
         logging.error(f'Errore generico: {e}')
