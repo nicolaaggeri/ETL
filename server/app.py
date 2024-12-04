@@ -3,12 +3,11 @@ import psycopg2
 import mysql.connector
 import logging
 from dotenv import load_dotenv
-from datetime import datetime
 from flask import Flask, jsonify, request
 from threading import Thread
 import math
 import shutil
-from datetime import datetime
+from datetime import datetime, timezone
 
 # Configure logging
 logging.basicConfig(
@@ -165,15 +164,22 @@ def run_etl():
                 # if 'id_macchina' in data and data['id_macchina'] not in valid_machine_ids:
                     # tipo_anomalia.append("ID macchina non valido")
 
-                # Regola: Timestamp non valido
                 try:
-                    # Parsing del timestamp
-                    data['timestamp_ricevuto'] = datetime.strptime(data['timestamp_ricevuto'], '%Y-%m-%d %H:%M:%S.%f')
+                    logging.info(f"Timestamp originale: {data['timestamp_ricevuto']}")
                     
-                    # Controllo se il timestamp è nel futuro
-                    if data['timestamp_ricevuto'] > datetime.now():
+                    # Prova con millisecondi
+                    try:
+                        data['timestamp_ricevuto'] = datetime.strptime(data['timestamp_ricevuto'], '%Y-%m-%d %H:%M:%S.%f')
+                        logging.info(f"Timestamp modificato: {data['timestamp_ricevuto']}")
+                    except ValueError:
+                        # Prova senza millisecondi
+                        data['timestamp_ricevuto'] = datetime.strptime(data['timestamp_ricevuto'], '%Y-%m-%d %H:%M:%S')
+                    
+                    # Controllo se il timestamp è nel futuro (UTC)
+                    if data['timestamp_ricevuto'] > datetime.utcnow():
                         tipo_anomalia.append("Timestamp ricevuto nel futuro")
-                except (ValueError, TypeError):
+                except (ValueError, TypeError) as e:
+                    logging.error(f"Errore nel parsing del timestamp '{data['timestamp_ricevuto']}': {e}")
                     tipo_anomalia.append("Timestamp ricevuto non valido")
 
                 # Se ci sono anomalie, salva il record nei dati invalidi
