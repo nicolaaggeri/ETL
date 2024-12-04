@@ -8,6 +8,7 @@ from flask import Flask, jsonify, request
 from threading import Thread
 import math
 import shutil
+from datetime import datetime
 
 # Configure logging
 logging.basicConfig(
@@ -166,7 +167,12 @@ def run_etl():
 
                 # Regola: Timestamp non valido
                 try:
-                    data['timestamp_ricevuto'] = datetime.strptime(data['timestamp_ricevuto'], '%Y-%m-%d %H:%M:%S')
+                    # Parsing del timestamp
+                    data['timestamp_ricevuto'] = datetime.strptime(data['timestamp_ricevuto'], '%Y-%m-%d %H:%M:%S.%f')
+                    
+                    # Controllo se il timestamp è nel futuro
+                    if data['timestamp_ricevuto'] > datetime.now():
+                        tipo_anomalia.append("Timestamp ricevuto nel futuro")
                 except (ValueError, TypeError):
                     tipo_anomalia.append("Timestamp ricevuto non valido")
 
