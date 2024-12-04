@@ -106,47 +106,51 @@ def run_etl():
         colnames = [desc[0] for desc in pg_cursor.description]
         logging.info(f'Estrazione di {len(raw_data)} record da PostgreSQL.')
 
-        # Trasformazione dei dati
+        # Carica gli ID macchina validi in memoria per confronto
+        # my_cursor.execute("SELECT codice_macchinario FROM Macchinari")
+        # valid_machine_ids = {row[0] for row in pg_cursor.fetchall()}
+
         transformed_data = []
-        invalid_records = []  # Per salvare i record con NaN/NULL
+        invalid_records = []  # Per salvare i record con anomalie
+
         for row in raw_data:
             data = dict(zip(colnames, row))
             try:
                 # Escludere la colonna "anomalia" dalla validazione
                 columns_to_check = {key: value for key, value in data.items() if key != 'anomalia'}
 
-                if any(value is None or (isinstance(value, float) and math.isnan(value)) for value in columns_to_check.values()):
-                    tipo_anomalia = []
-                    
-                    # Regola: Valore mancante
-                    for key, value in columns_to_check.items():
-                        if value is None or (isinstance(value, float) and math.isnan(value)):
-                            tipo_anomalia.append(f"{key} mancante")
-                    
-                    # Regola: Valore fuori range
-                    if 'peso_effettivo' in data and (data['peso_effettivo'] < 0 or data['peso_effettivo'] > 1000):
-                        tipo_anomalia.append("Peso fuori range")
+                tipo_anomalia = []  # Lista per raccogliere le anomalie del record
 
-                    if 'temperatura_effettiva' in data and (data['temperatura_effettiva'] < -50 or data['temperatura_effettiva'] > 150):
-                        tipo_anomalia.append("Temperatura fuori range")
+                # Regola: Valori mancanti
+                for key, value in columns_to_check.items():
+                    if value is None or (isinstance(value, float) and math.isnan(value)):
+                        tipo_anomalia.append(f"{key} mancante")
 
-                    # Regola: ID macchina non valido (esempio con verifica referenziale)
-                    if 'id_macchina' in data:
-                        pg_cursor.execute("SELECT COUNT(*) FROM Macchine WHERE id_macchina = %s", (data['id_macchina'],))
-                        if pg_cursor.fetchone()[0] == 0:
-                            tipo_anomalia.append("ID macchina non valido")
-                    
-                    # Aggiungi il tipo di anomalia al record
-                    data['tipo_anomalia'] = "; ".join(tipo_anomalia)  # Unisci le anomalie con un separatore
+                # Regola: Valore fuori range
+                if 'peso_effettivo' in data and (data['peso_effettivo'] < 0 or data['peso_effettivo'] > 1000):
+                    tipo_anomalia.append("Peso fuori range")
+
+                if 'temperatura_effettiva' in data and (data['temperatura_effettiva'] < -50 or data['temperatura_effettiva'] > 150):
+                    tipo_anomalia.append("Temperatura fuori range")
+
+                # Regola: ID macchina non valido
+                # if 'id_macchina' in data and data['id_macchina'] not in valid_machine_ids:
+                    # tipo_anomalia.append("ID macchina non valido")
+
+                # Regola: Timestamp non valido
+                try:
+                    data['timestamp_ricevuto'] = datetime.strptime(data['timestamp_ricevuto'], '%Y-%m-%d %H:%M:%S')
+                except (ValueError, TypeError):
+                    tipo_anomalia.append("Timestamp ricevuto non valido")
+
+                # Se ci sono anomalie, salva il record nei dati invalidi
+                if tipo_anomalia:
+                    data['tipo_anomalia'] = "; ".join(tipo_anomalia)
                     logging.warning(f"Record con anomalie rilevate: {data['tipo_anomalia']} - {data}")
-
-                    # Salva il record per ulteriori analisi
                     invalid_records.append(data)
                     continue
 
-                if isinstance(data['timestamp_ricevuto'], str):
-                    data['timestamp_ricevuto'] = datetime.strptime(data['timestamp_ricevuto'], '%Y-%m-%d %H:%M:%S')
-
+                # Trasforma i dati validi
                 transformed_record = (
                     data['id_pezzo'],
                     data['peso_effettivo'],
