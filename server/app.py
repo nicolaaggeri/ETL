@@ -16,20 +16,12 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
-# Configura il secondo logger per attività periodiche
-periodic_logger = logging.getLogger('periodic_logger')
-periodic_logger.setLevel(logging.INFO)
-
-# Handler per il file di log delle operazioni periodiche
-periodic_handler = logging.FileHandler('logs/periodic.log')
-periodic_handler.setLevel(logging.INFO)
-
-# Formattazione per il logger periodico
-periodic_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-periodic_handler.setFormatter(periodic_formatter)
-
-# Aggiungi il handler al logger periodico
-periodic_logger.addHandler(periodic_handler)
+# Configure logging
+periodic_logger.basicConfig(
+    filename='logs/periodic.log',
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
 
 # Load environment variables from .env file
 load_dotenv(dotenv_path='config/.env')
