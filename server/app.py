@@ -16,6 +16,21 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
+# Configura il secondo logger per attività periodiche
+periodic_logger = logging.getLogger('periodic_logger')
+periodic_logger.setLevel(logging.INFO)
+
+# Handler per il file di log delle operazioni periodiche
+periodic_handler = logging.FileHandler('logs/periodic.log')
+periodic_handler.setLevel(logging.INFO)
+
+# Formattazione per il logger periodico
+periodic_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+periodic_handler.setFormatter(periodic_formatter)
+
+# Aggiungi il handler al logger periodico
+periodic_logger.addHandler(periodic_handler)
+
 # Load environment variables from .env file
 load_dotenv(dotenv_path='config/.env')
 
@@ -180,6 +195,7 @@ def run_etl():
     etl_status['last_run'] = datetime.utcnow().isoformat()
 
     try:
+        periodic_logger.info('Operazione periodica avviata.')
         # Connessione a PostgreSQL
         pg_conn = psycopg2.connect(
             host=PG_HOST,
@@ -207,6 +223,9 @@ def run_etl():
         raw_data = pg_cursor.fetchall()
         colnames = [desc[0] for desc in pg_cursor.description]
         logging.info(f'Estrazione di {len(raw_data)} record da PostgreSQL.')
+
+        # Registrazione dei risultati
+        periodic_logger.info(f'Estrazione di {len(raw_data)} record da PostgreSQL.')
 
         # Carica gli ID macchina validi in memoria per confronto
         # my_cursor.execute("SELECT codice_macchinario FROM Macchinari")
@@ -312,6 +331,7 @@ def run_etl():
             """
             if save_records(my_cursor, my_conn, insert_query_valid, transformed_data):
                 mysql_insert_success = True
+                periodic_logger.info(f"Salvati {len(transformed_data)} record nella tabella Forgiatura in MySQL")
             else:
                 etl_status['last_error'] = 'Errore durante l\'inserimento dei dati validi in MySQL.'
         except Exception as e:
@@ -328,6 +348,7 @@ def run_etl():
             """
             if save_records(my_cursor, my_conn, insert_query_invalid, invalid_records_tuples):
                 mysql_insert_success = True
+                periodic_logger.info(f"Salvati {len(invalid_records_tuples)} record nella tabella dati_anomali in MySQL")
             else:
                 etl_status['last_error'] = 'Errore durante l\'inserimento dei dati non validi in MySQL.'
                 mysql_insert_success = False
@@ -355,8 +376,10 @@ def run_etl():
                 etl_status['last_error'] = f'Errore durante l\'eliminazione in PostgreSQL: {e}'
                 pg_conn.rollback()
 
+    periodic_logger.info(f"ETL completato con successo")
     except Exception as e:
         logging.error(f'Errore generico: {e}')
+        periodic_logger.error(f"ETL fallito con errore: {e}")
         etl_status['last_error'] = str(e)
 
     finally:
@@ -432,6 +455,16 @@ def get_processed_data():
 def get_logs():
     try:
         with open('logs/etl.log', 'r') as log_file:
+            logs = log_file.read()
+        return jsonify({'logs': logs}), 200
+    except Exception as e:
+        logging.error(f'Errore nella lettura del file di log: {e}')
+        return jsonify({'error': 'Impossibile leggere i log.'}), 500
+
+@app.route('/log-cron', methods=['GET'])
+def get_log_cron():
+    try:
+        with open('logs/periodic.log', 'r') as log_file:
             logs = log_file.read()
         return jsonify({'logs': logs}), 200
     except Exception as e:
