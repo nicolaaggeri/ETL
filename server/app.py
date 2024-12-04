@@ -83,7 +83,8 @@ def run_etl():
         logging.info('Connesso a MySQL.')
 
         # Estrazione dei dati dalla tabella staging
-        pg_cursor.execute("SELECT * FROM RawForgiatura WHERE stato_processo = 'PENDING'")
+        # pg_cursor.execute("SELECT * FROM RawForgiatura WHERE stato_processo = 'PENDING'")
+        pg_cursor.execute("SELECT * FROM RawForgiatura")
         raw_data = pg_cursor.fetchall()
         colnames = [desc[0] for desc in pg_cursor.description]
         logging.info(f'Estrazione di {len(raw_data)} record da PostgreSQL.')
@@ -132,6 +133,7 @@ def run_etl():
             processed_ids = [data[0] for data in raw_data if isinstance(data[0], int)]
             logging.info(f"ID MySQL Processati: {processed_ids}")
 
+            '''
             if not processed_ids:
                 logging.warning('Nessun ID valido trovato in raw_data. Nessun aggiornamento eseguito in PostgreSQL.')
             else:
@@ -146,11 +148,12 @@ def run_etl():
 
             etl_status['last_success'] = datetime.utcnow().isoformat()
             etl_status['last_error'] = None
+            '''
 
             if processed_ids:
                 delete_query = """
                 DELETE FROM RawForgiatura
-                WHERE id = ANY(%s) AND stato_processo = 'PROCESSED'
+                WHERE id = ANY(%s)
                 """
                 pg_cursor.execute(delete_query, (processed_ids,))
                 pg_conn.commit()
