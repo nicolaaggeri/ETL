@@ -7,6 +7,7 @@ from datetime import datetime
 from flask import Flask, jsonify, request
 from threading import Thread
 import math
+import shutil
 
 # Configure logging
 logging.basicConfig(
@@ -46,6 +47,29 @@ MYSQL_PORT = os.getenv('MYSQL_PORT')
 MYSQL_DATABASE = os.getenv('MYSQL_DATABASE')
 MYSQL_USER = os.getenv('MYSQL_USER')
 MYSQL_PASSWORD = os.getenv('MYSQL_PASSWORD')
+
+def clear_log_file(log_file_path, backup=True):
+    """
+    Pulisce il file di log, mantenendo opzionalmente una copia di backup.
+
+    :param log_file_path: Percorso del file di log da pulire.
+    :param backup: Se True, crea una copia di backup del file prima di svuotarlo.
+    """
+    try:
+        if backup:
+            backup_path = f"{log_file_path}.backup"
+            shutil.copy(log_file_path, backup_path)
+            logging.info(f"Backup del file di log creato: {backup_path}")
+
+        # Svuota il file
+        with open(log_file_path, 'w') as log_file:
+            log_file.truncate(0)
+            logging.info(f"File di log '{log_file_path}' svuotato con successo.")
+
+    except FileNotFoundError:
+        logging.warning(f"Il file di log '{log_file_path}' non è stato trovato.")
+    except Exception as e:
+        logging.error(f"Errore durante la pulizia del file di log '{log_file_path}': {e}")
 
 def disable_foreign_keys(cursor):
     cursor.execute("SET FOREIGN_KEY_CHECKS = 0;")
@@ -222,7 +246,7 @@ def run_etl():
 
                 etl_status['last_success'] = datetime.utcnow().isoformat()
                 etl_status['last_error'] = None
-            except psycog2.Error as e:
+            except psycopg2.Error as e:
                 logging.error(f'Errore durante l\'eliminazione dei dati in Postgres: {e}')
                 etl_status['last_error'] = f'Errore durante l\'eliminazione in PostgreSQL: {e}'
                 pg_conn.rollback()
@@ -266,6 +290,12 @@ def get_status():
 def run():
     run_etl()
     return jsonify(etl_status, data_processed), 200
+
+@app.route('/clear-logs', methods=['POST'])
+def clear_logs():
+    log_file_path = 'logs/etl.log'  # Percorso del file di log
+    clear_log_file(log_file_path)
+    return jsonify({'message': 'File di log pulito con successo.'}), 200
 
 @app.route('/processed-data', methods=['GET'])
 def get_processed_data():
