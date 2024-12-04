@@ -163,28 +163,26 @@ def run_etl():
                 # Regola: ID macchina non valido
                 # if 'id_macchina' in data and data['id_macchina'] not in valid_machine_ids:
                     # tipo_anomalia.append("ID macchina non valido")
-
+                
                 try:
-                    logging.info(f"Timestamp originale: {data['timestamp_ricevuto']}")
-                    
-                    # Controlla se è già un oggetto datetime
-                    if isinstance(data['timestamp_ricevuto'], datetime):
-                        timestamp = data['timestamp_ricevuto']
-                    else:
-                        # Parsing del timestamp (prova con millisecondi)
-                        try:
-                            timestamp = datetime.strptime(data['timestamp_ricevuto'], '%Y-%m-%d %H:%M:%S.%f')
-                        except ValueError:
-                            # Prova senza millisecondi
-                            timestamp = datetime.strptime(data['timestamp_ricevuto'], '%Y-%m-%d %H:%M:%S')
+                    logging.debug(f"Timestamp originale: {data['timestamp_ricevuto']}")
 
-                    # Controllo se il timestamp è nel futuro (UTC)
-                    if timestamp > datetime.utcnow():
-                        tipo_anomalia.append("Timestamp ricevuto nel futuro")
-                        logging.info(f"Timestamp parsato: {data['timestamp_ricevuto']}, Ora attuale (UTC): {datetime.utcnow()}")
+                    # Parsing del timestamp
+                    if isinstance(data['timestamp_ricevuto'], datetime):
+                        parsed_timestamp = data['timestamp_ricevuto']
                     else:
-                        data['timestamp_ricevuto'] = timestamp  # Assegna il timestamp parsato
-                        logging.info(f"Timestamp parsato: {data['timestamp_ricevuto']}, Ora attuale (UTC): {datetime.utcnow()}")
+                        parsed_timestamp = datetime.strptime(data['timestamp_ricevuto'], '%Y-%m-%d %H:%M:%S.%f')
+
+                    # Controllo se il timestamp è nel futuro (aggiungi tolleranza)
+                    now = datetime.utcnow()
+                    tolerance = timedelta(seconds=1)  # 1 secondo di tolleranza
+                    if parsed_timestamp > now + tolerance:
+                        tipo_anomalia.append("Timestamp ricevuto nel futuro")
+
+                    # Salva il timestamp parsato nel dizionario
+                    data['timestamp_ricevuto'] = parsed_timestamp
+
+                    logging.debug(f"Timestamp parsato: {data['timestamp_ricevuto']}, Ora attuale (UTC): {now}")
                 except (ValueError, TypeError) as e:
                     logging.error(f"Errore nel parsing del timestamp '{data['timestamp_ricevuto']}': {e}")
                     tipo_anomalia.append("Timestamp ricevuto non valido")
