@@ -55,6 +55,23 @@ def enable_foreign_keys(cursor):
     cursor.execute("SET FOREIGN_KEY_CHECKS = 1;")
     logging.info("Foreign key checks riabilitati.")
 
+def save_records(cursor, connection, query, records, retries=3):
+    """Funzione generica per salvare record nel database con retry."""
+    for attempt in range(1, retries + 1):
+        try:
+            cursor.executemany(query, records)
+            connection.commit()
+            logging.info(f'Inseriti {cursor.rowcount} record in MySQL al tentativo {attempt}.')
+            return True
+        except mysql.connector.Error as e:
+            logging.error(f'Errore durante l\'inserimento in MySQL al tentativo {attempt}: {e}')
+            if connection.is_connected():
+                connection.rollback()
+            if attempt == retries:
+                logging.error('Tutti i tentativi di inserimento in MySQL sono falliti.')
+                raise
+    return False
+
 def run_etl():
     global etl_status
     etl_status['running'] = True
@@ -95,11 +112,37 @@ def run_etl():
         for row in raw_data:
             data = dict(zip(colnames, row))
             try:
-                # Controllo se i valori sono NaN o NULL
-                if any(value is None or (isinstance(value, float) and math.isnan(value)) for value in data.values()):
-                    logging.warning(f'Record con valori NaN/NULL rilevato: {data}')
-                    invalid_records.append(data)  # Salva il record per ulteriori analisi
-                    continue  # Salta questo record
+                # Escludere la colonna "anomalia" dalla validazione
+                columns_to_check = {key: value for key, value in data.items() if key != 'anomalia'}
+
+                if any(value is None or (isinstance(value, float) and math.isnan(value)) for value in columns_to_check.values()):
+                    tipo_anomalia = []
+                    
+                    # Regola: Valore mancante
+                    for key, value in columns_to_check.items():
+                        if value is None or (isinstance(value, float) and math.isnan(value)):
+                            tipo_anomalia.append(f"{key} mancante")
+                    
+                    # Regola: Valore fuori range
+                    if 'peso_effettivo' in data and (data['peso_effettivo'] < 0 or data['peso_effettivo'] > 1000):
+                        tipo_anomalia.append("Peso fuori range")
+
+                    if 'temperatura_effettiva' in data and (data['temperatura_effettiva'] < -50 or data['temperatura_effettiva'] > 150):
+                        tipo_anomalia.append("Temperatura fuori range")
+
+                    # Regola: ID macchina non valido (esempio con verifica referenziale)
+                    if 'id_macchina' in data:
+                        pg_cursor.execute("SELECT COUNT(*) FROM Macchine WHERE id_macchina = %s", (data['id_macchina'],))
+                        if pg_cursor.fetchone()[0] == 0:
+                            tipo_anomalia.append("ID macchina non valido")
+                    
+                    # Aggiungi il tipo di anomalia al record
+                    data['tipo_anomalia'] = "; ".join(tipo_anomalia)  # Unisci le anomalie con un separatore
+                    logging.warning(f"Record con anomalie rilevate: {data['tipo_anomalia']} - {data}")
+
+                    # Salva il record per ulteriori analisi
+                    invalid_records.append(data)
+                    continue
 
                 if isinstance(data['timestamp_ricevuto'], str):
                     data['timestamp_ricevuto'] = datetime.strptime(data['timestamp_ricevuto'], '%Y-%m-%d %H:%M:%S')
@@ -123,29 +166,31 @@ def run_etl():
         if invalid_records:
             logging.warning(f'Trovati {len(invalid_records)} record con valori NaN/NULL.')
 
-        # Caricamento dei dati in MySQL
+        # Inserimento dei dati validi
         try:
             disable_foreign_keys(my_cursor)
-            insert_query = """
+            insert_query_valid = """
             INSERT INTO Forgiatura (codice_pezzo, peso_effettivo, temperatura_effettiva, timestamp, codice_macchinario)
             VALUES (%s, %s, %s, %s, %s)
             """
+            if not save_records(my_cursor, my_conn, insert_query_valid, transformed_data):
+                etl_status['last_error'] = 'Errore durante l\'inserimento dei dati validi in MySQL.'
+        except Exception as e:
+            logging.error(f'Errore durante il salvataggio dei dati validi: {e}')
+        finally:
+            enable_foreign_keys(my_cursor)
 
-            retries = 3  # Numero massimo di tentativi
-            for attempt in range(1, retries + 1):
-                try:
-                    my_cursor.executemany(insert_query, transformed_data)
-                    my_conn.commit()
-                    logging.info(f'Inseriti {my_cursor.rowcount} record in MySQL al tentativo {attempt}.')
-                    break
-                except mysql.connector.Error as e:
-                    logging.error(f'Errore durante l\'inserimento dei dati in MySQL al tentativo {attempt}: {e}')
-                    if my_conn.is_connected():
-                        my_conn.rollback()
-                    if attempt == retries:
-                        logging.error('Tutti i tentativi di inserimento in MySQL sono falliti.')
-                        etl_status['last_error'] = f'Errore persistente durante l\'inserimento in MySQL: {e}'
-                        raise
+        # Inserimento dei dati non validi
+        try:
+            disable_foreign_keys(my_cursor)
+            insert_query_invalid = """
+            INSERT INTO dati_anomali (codice_pezzo, peso_effettivo, temperatura_effettiva, timestamp, codice_macchinario, tipo_anomalia)
+            VALUES (%s, %s, %s, %s, %s)
+            """
+            if not save_records(my_cursor, my_conn, insert_query_invalid, invalid_records):
+                etl_status['last_error'] = 'Errore durante l\'inserimento dei dati non validi in MySQL.'
+        except Exception as e:
+            logging.error(f'Errore durante il salvataggio dei dati non validi: {e}')
         finally:
             enable_foreign_keys(my_cursor)
 
