@@ -376,7 +376,6 @@ def run_etl():
                 etl_status['last_error'] = f'Errore durante l\'eliminazione in PostgreSQL: {e}'
                 pg_conn.rollback()
 
-    periodic_logger.info(f"ETL completato con successo")
     except Exception as e:
         logging.error(f'Errore generico: {e}')
         periodic_logger.error(f"ETL fallito con errore: {e}")
@@ -384,6 +383,7 @@ def run_etl():
 
     finally:
         etl_status['running'] = False
+        periodic_logger.info(f"ETL completato con successo")
 
         # Chiusura delle connessioni
         if 'my_cursor' in locals() and my_cursor:
