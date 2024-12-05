@@ -8,6 +8,7 @@ from threading import Thread
 import math
 import shutil
 from datetime import datetime, timezone, timedelta
+from flask_cors import CORS
 
 # Configure logging
 logging.basicConfig(
@@ -36,6 +37,8 @@ load_dotenv(dotenv_path='config/.env')
 
 # Inizializzazione dell'app Flask
 app = Flask(__name__)
+
+CORS(app)
 
 # Variabile globale per tracciare lo stato dell'ETL
 etl_status = {
@@ -443,6 +446,8 @@ def data():
 def clear_logs():
     log_file_path = 'logs/etl.log'  # Percorso del file di log
     clear_log_file(log_file_path)
+    log_file_path2 = 'logs/periodic.log'  # Percorso del file di log
+    clear_log_file(log_file_path2)
     return jsonify({'message': 'File di log pulito con successo.'}), 200
 
 @app.route('/processed-data', methods=['GET'])
