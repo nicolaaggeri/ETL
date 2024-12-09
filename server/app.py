@@ -400,6 +400,45 @@ def run_etl():
             pg_conn.close()
             logging.info('Connessione a PostgreSQL chiusa.')
 
+def insert(data):
+    """Inserisce i dati nella tabella Forgiatura in MySQL."""
+    try:
+        # Connessione a MySQL
+        my_conn = mysql.connector.connect(
+            host=MYSQL_HOST,
+            port=MYSQL_PORT,
+            database=MYSQL_DATABASE,
+            user=MYSQL_USER,
+            password=MYSQL_PASSWORD
+        )
+        my_cursor = my_conn.cursor()
+        logging.info('Connesso a MySQL.')
+        
+        # Controllo che i dati siano una lista/tupla con 4 elementi
+        #if not isinstance(data, (list, tuple)) or len(data) != 4:
+        #    logging.error('Dati non validi. Assicurati che siano 4 colonne in un array o tupla.')
+        #    return
+
+        disable_foreign_keys(cursor)
+
+        # Inserimento dei dati nella tabella
+        query = "INSERT INTO Forgiatura VALUES (%s, %s, %s, %s)"
+        my_cursor.execute(query, data)
+
+        enable_foreign_keys(cursor)
+        
+        # Commit per confermare la transazione
+        my_conn.commit()
+        logging.info(f'Record inserito con successo: {data}')
+
+    except mysql.connector.Error as e:
+        logging.error(f'Errore durante l\'inserimento: {e}')
+    finally:
+        if my_cursor:
+            my_cursor.close()
+        if my_conn:
+            my_conn.close()
+
 @app.route('/run-etl', methods=['POST'])
 def trigger_etl():
     if etl_status['running']:
@@ -449,6 +488,27 @@ def clear_logs():
     log_file_path2 = 'logs/periodic.log'  # Percorso del file di log
     clear_log_file(log_file_path2)
     return jsonify({'message': 'File di log pulito con successo.'}), 200
+
+@app.route('/insert', methods=['POST'])
+def insert_endpoint():
+    """Endpoint per inserire dati nella tabella Forgiatura."""
+    try:
+        # Ottieni i dati dal body della richiesta (POST)
+        data = request.get_json()
+        logging.info(f'Dati ricevuti: {data}')
+        
+        # Verifica che i dati siano validi
+        # if not data or not isinstance(data, list) or len(data) != 4:
+        #    return jsonify({'error': 'Dati non validi. Aspettati un array di 4 elementi.'}), 400
+
+        # Chiama la funzione di inserimento
+        insert(data)
+        
+        return jsonify({'message': 'Dati inseriti con successo.'}), 200
+
+    except Exception as e:
+        logging.error(f'Errore nella gestione della richiesta: {e}')
+        return jsonify({'error': 'Errore del server interno.'}), 500
 
 @app.route('/processed-data', methods=['GET'])
 def get_processed_data():
