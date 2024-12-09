@@ -419,13 +419,13 @@ def insert(data):
         #    logging.error('Dati non validi. Assicurati che siano 4 colonne in un array o tupla.')
         #    return
 
-        disable_foreign_keys(cursor)
+        disable_foreign_keys(my_cursor)
 
         # Inserimento dei dati nella tabella
         query = "INSERT INTO Forgiatura VALUES (%s, %s, %s, %s)"
         my_cursor.execute(query, data)
 
-        enable_foreign_keys(cursor)
+        enable_foreign_keys(my_cursor)
         
         # Commit per confermare la transazione
         my_conn.commit()
