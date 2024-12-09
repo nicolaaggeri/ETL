@@ -422,7 +422,9 @@ def insert(data):
         disable_foreign_keys(my_cursor)
 
         # Inserimento dei dati nella tabella
-        query = "INSERT INTO Forgiatura VALUES (%s, %s, %s, %s, %s, %s)"
+        query = """
+                INSERT INTO Forgiatura (codice_pezzo, peso_effettivo, temperatura_effettiva, timestamp, codice_macchinario, id_anomalia)
+                VALUES (%s, %s, %s, %s, %s, %s);"""
         my_cursor.execute(query, data)
 
         enable_foreign_keys(my_cursor)
