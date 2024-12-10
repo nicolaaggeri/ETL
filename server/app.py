@@ -424,8 +424,11 @@ def insert(data):
         # Inserimento dei dati nella tabella
         query = """
                 INSERT INTO Forgiatura (codice_pezzo, peso_effettivo, temperatura_effettiva, timestamp, codice_macchinario, id_anomalia)
-                VALUES (%s, %s, %s, %s, %s, %s);"""
+                VALUES (%s, %s, %s, %s, %s, %s);
+                """
         my_cursor.execute(query, data)
+
+        logging.info(f'Query eseguit: {query}')
 
         enable_foreign_keys(my_cursor)
         
