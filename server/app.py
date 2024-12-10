@@ -426,7 +426,14 @@ def insert(data):
                 INSERT INTO Forgiatura (codice_pezzo, peso_effettivo, temperatura_effettiva, timestamp, codice_macchinario, id_anomalia)
                 VALUES (%s, %s, %s, %s, %s, %s);
                 """
-        my_cursor.execute(query, data)
+        my_cursor.execute(query, (
+                data["codice_pezzo"],
+                data["peso_effettivo"],
+                data["temperatura_effettiva"],
+                data["timestamp"],
+                data["codice_macchinario"],
+                data["id_anomalia"]
+            ))
 
         logging.info(f'Query eseguit: {query}')
 
