@@ -1,5 +1,4 @@
 import os
-import psycopg2
 import mysql.connector
 import logging
 from dotenv import load_dotenv
@@ -52,23 +51,16 @@ etl_status = {
 }
 
 FIELD_TO_ANOMALIA_ID = {
-    'timestamp_fine': 1001,
-    'peso_effettivo': 1002,
-    'temperatura_effettiva': 1003,
-    'anomalia': 1004,
+    'timestamp_fine': 1,
+    'peso_effettivo': 2,
+    'temperatura_effettiva': 3,
+    'anomalia': 4
     # Aggiungi altri campi se necessario
 }
 
 data_processed = {
     'data':[]
 }
-
-# PostgreSQL connection parameters
-PG_HOST = os.getenv('PG_HOST')
-PG_PORT = os.getenv('PG_PORT')
-PG_DATABASE = os.getenv('PG_DATABASE')
-PG_USER = os.getenv('PG_USER')
-PG_PASSWORD = os.getenv('PG_PASSWORD')
 
 # MySQL connection parameters
 MYSQL_HOST = os.getenv('MYSQL_HOST')
@@ -368,13 +360,13 @@ def main_etl(rows: List[dict]) -> int:
                 # Gestione di altri errori
                 logging.error(f"Errore durante il processamento del record {data}: {e}", exc_info=True)
 
-        # Commit delle transazioni
-        my_conn.commit()
-        enable_foreign_keys(my_cursor)
+                # Commit delle transazioni
+                my_conn.commit()
+                enable_foreign_keys(my_cursor)
 
-        logging.info("ETL completato con successo.")
-        etl_status['last_success'] = datetime.utcnow().isoformat()
-        etl_status['last_error'] = None
+                logging.info("ETL completato con successo.")
+                etl_status['last_success'] = datetime.utcnow().isoformat()
+                etl_status['last_error'] = None
 
         return 200
 
@@ -462,12 +454,21 @@ def trigger_etl():
     if etl_status['running']:
         return jsonify({'status': 'ETL già in esecuzione.'}), 400
 
-    # Avvia l'ETL in un thread separato per evitare il blocco del server
-    thread = Thread(target=main_etl)
-    thread.start()
+    try:
+        data = request.get_json()
+        if not isinstance(data, list):
+            return jsonify({'error': 'I dati devono essere una lista di record.'}), 400
 
-    logging.info('Processo ETL avviato tramite API.')
-    return jsonify({'status': 'ETL avviato.'}), 202
+        # Avvia l'ETL in un thread separato
+        thread = Thread(target=main_etl, args=(data,))
+        thread.start()
+
+        logging.info('Processo ETL avviato tramite API.')
+        return jsonify({'status': 'ETL avviato.'}), 202
+
+    except Exception as e:
+        logging.error(f'Errore nell\'avvio dell\'ETL: {e}')
+        return jsonify({'error': 'Errore del server interno.'}), 500
 
 @app.route('/status', methods=['GET'])
 def get_status():
