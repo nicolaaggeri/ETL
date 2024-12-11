@@ -189,8 +189,7 @@ def validate_timestamp(timestamp_str: str, tolerance_minutes: int = 60) -> datet
         logging.debug(f"Timestamp diff from now: {parsed_timestamp - now}")
 
         # Verifica se il timestamp è entro la tolleranza rispetto all'orario corrente
-        if abs(parsed_timestamp - now) > tolerance:
-            logging.warning(f"Il timestamp è più di {tolerance_minutes} minuti dall'orario corrente!")
+        if parsed_timestamp > now + tolerance:
             raise ValueError(f"Timestamp fuori dalla tolleranza di {tolerance_minutes} minuti")
         
         return parsed_timestamp
