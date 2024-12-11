@@ -273,10 +273,6 @@ def insert_operation_data(cursor, data: dict) -> (bool, Optional[str], Optional[
         return False, str(e), None
 
 def main_etl(rows: List[dict]) -> int:
-    """
-    Esegue il processo ETL sui dati forniti.
-    Ritorna 200 se successo, 500 in caso di errore.
-    """
     global etl_status
     etl_status['running'] = True
     etl_status['last_run'] = datetime.utcnow().isoformat()
@@ -285,59 +281,40 @@ def main_etl(rows: List[dict]) -> int:
     my_cursor = None
 
     try:
-        # Connessione al database
         my_conn = connect_to_db()
         my_cursor = my_conn.cursor(dictionary=True)
         logging.info('Connesso a MySQL.')
 
-        # Disattiviamo le foreign key all'inizio
         disable_foreign_keys(my_cursor)
 
         for i, data in enumerate(rows):
             logging.debug(f"Processo record #{i}: {data}")
             try:
-                # Validazione e parsing dei dati con Pydantic
                 operazione = Operazione(**data)
                 operazione_dict = operazione.dict()
-
-                # Inserimento nel database
                 success, error_msg, id_operazione = insert_operation_data(my_cursor, operazione_dict)
                 if success:
                     logging.info(f"Record inserito con successo: ID {id_operazione}")
                 else:
-                    # Inserimento fallito, registriamo l'anomalia
-                    if id_operazione is None:
-                        # Se non abbiamo l'ID operazione, non possiamo inserire l'anomalia
-                        logging.error(f"Inserimento fallito per il record {data}: {error_msg}")
-                    else:
-                        # Se l'inserimento dell'operazione ha fallito, potremmo voler registrare l'anomalia
-                        # Tuttavia, senza un ID operazione, non è possibile associarla
-                        logging.error(f"Inserimento fallito per il record {data}: {error_msg}")
+                    logging.error(f"Inserimento fallito per il record {data}: {error_msg}")
 
             except ValidationError as ve:
-                # Gestione degli errori di validazione
                 errors = ve.errors()
                 logging.warning(f"Record invalido: {data} - Anomalie: {errors}")
 
-                # Prepariamo le anomalie da inserire
                 anomalie = []
-                for error in errors:
-                    field = error['loc'][-1]
-                    message = error['msg']
-                    anomaly_id = FIELD_TO_ANOMALIA_ID.get(field, 999)  # Usa 999 se il campo non è mappato
-                    anomalie.append({'id': anomaly_id, 'message': f"{field}: {message}"})
-
-                # Inseriamo comunque il record con i campi invalidi impostati a None
                 operazione_dict = data.copy()
                 for error in errors:
                     field = error['loc'][-1]
-                    operazione_dict[field] = None  # Impostiamo il campo a None se invalido
+                    message = error['msg']
+                    anomaly_id = FIELD_TO_ANOMALIA_ID.get(field, 999)
+                    anomalie.append({'id': anomaly_id, 'message': f"{field}: {message}"})
+                    operazione_dict[field] = None
 
                 try:
                     success, error_msg, id_operazione = insert_operation_data(my_cursor, operazione_dict)
                     if success:
                         logging.info(f"Record inserito con campi invalidi: ID {id_operazione}")
-                        # Inseriamo le anomalie nel database
                         if anomalie and id_operazione:
                             insert_anomalia_operazione = """
                             INSERT INTO Anomalia_operazione (id_anomalia, id_operazione, note)
@@ -348,23 +325,24 @@ def main_etl(rows: List[dict]) -> int:
                                 message = anomaly.get('message')
                                 my_cursor.execute(insert_anomalia_operazione, (anomaly_id, id_operazione, message))
                     else:
-                        # Se anche l'inserimento del record fallisce, registriamo l'errore
                         logging.error(f"Inserimento fallito per il record con anomalie {data}: {error_msg}")
                 except Exception as e:
                     logging.error(f"Errore durante l'inserimento del record invalidato {data}: {e}", exc_info=True)
 
             except Exception as e:
-                # Gestione di altri errori
                 logging.error(f"Errore durante il processamento del record {data}: {e}", exc_info=True)
-
-                # Commit delle transazioni
-                my_conn.commit()
+                # In caso di errore generale, effettua rollback, riabilita le foreign key e aggiorna lo stato
+                my_conn.rollback()
                 enable_foreign_keys(my_cursor)
+                etl_status['last_error'] = str(e)
+                return 500
 
-                logging.info("ETL completato con successo.")
-                etl_status['last_success'] = datetime.utcnow().isoformat()
-                etl_status['last_error'] = None
-
+        # Se tutto è andato a buon fine
+        my_conn.commit()
+        enable_foreign_keys(my_cursor)
+        logging.info("ETL completato con successo.")
+        etl_status['last_success'] = datetime.utcnow().isoformat()
+        etl_status['last_error'] = None
         return 200
 
     except Exception as e:
@@ -376,8 +354,6 @@ def main_etl(rows: List[dict]) -> int:
     finally:
         etl_status['running'] = False
         periodic_logger.info("ETL completato")
-
-        # Chiusura cursore e connessione
         if my_cursor:
             my_cursor.close()
         if my_conn and my_conn.is_connected():
