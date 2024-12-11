@@ -11,6 +11,7 @@ from flask_cors import CORS
 from typing import List, Optional
 from pydantic import BaseModel, Field, ValidationError, validator
 from functools import wraps
+from mysql.connector import Error
 
 # Configure logging
 logging.basicConfig(
@@ -320,11 +321,11 @@ def main_etl(rows: List[dict]) -> int:
 
                 # Prepariamo le anomalie da inserire
                 anomalie = []
-                    for error in errors:
-                        field = error['loc'][-1]
-                        message = error['msg']
-                        anomaly_id = FIELD_TO_ANOMALIA_ID.get(field, 999)  # Usa 999 se il campo non è mappato
-                        anomalie.append({'id': anomaly_id, 'message': f"{field}: {message}"})
+                for error in errors:
+                    field = error['loc'][-1]
+                    message = error['msg']
+                    anomaly_id = FIELD_TO_ANOMALIA_ID.get(field, 999)  # Usa 999 se il campo non è mappato
+                    anomalie.append({'id': anomaly_id, 'message': f"{field}: {message}"})
 
                 # Inseriamo comunque il record con i campi invalidi impostati a None
                 operazione_dict = data.copy()
