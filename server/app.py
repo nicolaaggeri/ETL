@@ -212,11 +212,7 @@ def connect_to_db():
         logging.error(f"Errore nella connessione al database: {e}")
         raise
 
-def insert_operation_data(cursor, data: dict) -> (bool, Optional[str]):
-    """
-    Inserisce dati nelle tabelle Operazioni, Forgiatura/CNC, Anomalia_operazione.
-    Restituisce (True, None) se successo, altrimenti (False, messaggio_errore).
-    """
+def insert_operation_data(cursor, data: dict) -> (bool, Optional[str], Optional[int]):
     try:
         # Inserimento operazione
         insert_operazione = """
@@ -257,7 +253,7 @@ def insert_operation_data(cursor, data: dict) -> (bool, Optional[str]):
             ))
         else:
             # Tipo operazione sconosciuto
-            return False, "Tipo operazione non riconosciuto"
+            return False, "Tipo operazione non riconosciuto", None
 
         # Inserimento anomalie se presenti
         if 'anomalia' in data and isinstance(data['anomalia'], list) and data['anomalia']:
@@ -269,11 +265,11 @@ def insert_operation_data(cursor, data: dict) -> (bool, Optional[str]):
                 anomaly_id = anomaly['id']
                 cursor.execute(insert_anomalia_operazione, (anomaly_id, id_operazione, 'Anomalia registrata'))
 
-        return True, None
+        return True, None, id_operazione
 
     except Exception as e:
         logging.error(f'Errore durante l\'inserimento nel database: {e}', exc_info=True)
-        return False, str(e)
+        return False, str(e), None
 
 def main_etl(rows: List[dict]) -> int:
     """
