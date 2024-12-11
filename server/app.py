@@ -9,6 +9,9 @@ import math
 import shutil
 from datetime import datetime, timezone, timedelta
 from flask_cors import CORS
+from typing import List, Optional
+from pydantic import BaseModel, Field, ValidationError, validator
+from functools import wraps
 
 # Configure logging
 logging.basicConfig(
@@ -48,15 +51,15 @@ etl_status = {
     'last_error': None
 }
 
+FIELD_TO_ANOMALIA_ID = {
+    'timestamp_fine': 1001,
+    'peso_effettivo': 1002,
+    'temperatura_effettiva': 1003,
+    'anomalia': 1004,
+    # Aggiungi altri campi se necessario
+}
+
 data_processed = {
-    'data':[]
-}
-
-data_forgiatura = {
-    'data':[]
-}
-
-data_anomali = {
     'data':[]
 }
 
@@ -73,6 +76,59 @@ MYSQL_PORT = os.getenv('MYSQL_PORT')
 MYSQL_DATABASE = os.getenv('MYSQL_DATABASE')
 MYSQL_USER = os.getenv('MYSQL_USER')
 MYSQL_PASSWORD = os.getenv('MYSQL_PASSWORD')
+
+class Anomalia(BaseModel):
+    id: int
+
+class Operazione(BaseModel):
+    id_commessa: int
+    codice_pezzo: str
+    codice_macchinario: str
+    codice_operatore: str
+    timestamp_inizio: datetime
+    timestamp_fine: datetime
+    tipo_operazione: str
+    peso_effettivo: Optional[float] = None
+    temperatura_effettiva: Optional[float] = None
+    numero_pezzi_ora: Optional[int] = None
+    tipo_fermo: Optional[str] = None
+    anomalia: Optional[List[Anomalia]] = None
+
+    @validator('tipo_operazione')
+    def tipo_operazione_valido(cls, v):
+        if v not in {'forgiatura', 'cnc'}:
+            raise ValueError('Tipo operazione non riconosciuto')
+        return v
+
+    @validator('peso_effettivo')
+    def peso_effettivo_range(cls, v, values):
+        if values.get('tipo_operazione') == 'forgiatura':
+            if v is None or not (0 <= v <= 1000):
+                raise ValueError('Peso fuori range')
+        return v
+
+    @validator('temperatura_effettiva')
+    def temperatura_effettiva_range(cls, v, values):
+        if values.get('tipo_operazione') == 'forgiatura':
+            if v is None or not (-50 <= v <= 150):
+                raise ValueError('Temperatura fuori range')
+        return v
+
+    @validator('timestamp_inizio', 'timestamp_fine', pre=True)
+    def validate_and_parse_timestamp(cls, v, field):
+        """
+        Valida e parsifica i timestamp utilizzando le funzioni personalizzate.
+        """
+        try:
+            return validate_timestamp(v)
+        except ValueError as e:
+            raise ValueError(f"{field.name} non valido: {e}")
+    
+    @validator('anomalia', each_item=True)
+    def anomalia_valida(cls, v):
+        if not isinstance(v, Anomalia):
+            raise ValueError('Struttura anomalia non valida')
+        return v
 
 def clear_log_file(log_file_path, backup=True):
     """
@@ -105,41 +161,239 @@ def enable_foreign_keys(cursor):
     cursor.execute("SET FOREIGN_KEY_CHECKS = 1;")
     logging.info("Foreign key checks riabilitati.")
 
-def parse_timestamp(timestamp_str):
+def parse_timestamp(timestamp_str: str) -> datetime:
+    """
+    Tenta di parsare una stringa timestamp con o senza microsecondi.
+    """
     try:
-        # Try parsing with microseconds
+        # Prova a parsare con microsecondi
         try:
             parsed_timestamp = datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S.%f')
             return parsed_timestamp
         except ValueError:
-            # If microseconds parsing fails, try without microseconds
+            # Se fallisce, prova senza microsecondi
             parsed_timestamp = datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S')
             return parsed_timestamp
     except ValueError as e:
-        logging.error(f"Unable to parse timestamp: {timestamp_str}")
+        logging.error(f"Impossibile parsare il timestamp: {timestamp_str}")
         raise
 
-def validate_timestamp(timestamp_str, tolerance_minutes=60):
+def validate_timestamp(timestamp_str: str, tolerance_minutes: int = 60) -> datetime:
+    """
+    Valida che il timestamp sia entro una certa tolleranza rispetto all'orario corrente.
+    Restituisce l'oggetto datetime se valido, altrimenti solleva un'eccezione.
+    """
     try:
         parsed_timestamp = parse_timestamp(timestamp_str)
         now = datetime.utcnow()
         
-        # Increased tolerance to 60 minutes
+        # Aumentata tolleranza a 60 minuti
         tolerance = timedelta(minutes=tolerance_minutes)
 
-        # Debug logging
-        print(f"Parsed Timestamp: {parsed_timestamp}")
-        print(f"Current UTC Time: {now}")
-        print(f"Timestamp diff from now: {parsed_timestamp - now}")
+        # Logging di debug
+        logging.debug(f"Parsed Timestamp: {parsed_timestamp}")
+        logging.debug(f"Current UTC Time: {now}")
+        logging.debug(f"Timestamp diff from now: {parsed_timestamp - now}")
 
-        # Check if timestamp is within tolerance of current time
+        # Verifica se il timestamp è entro la tolleranza rispetto all'orario corrente
         if abs(parsed_timestamp - now) > tolerance:
-            print(f"Timestamp is more than {tolerance_minutes} minutes from current time!")
-            return False
-        return True
+            logging.warning(f"Il timestamp è più di {tolerance_minutes} minuti dall'orario corrente!")
+            raise ValueError(f"Timestamp fuori dalla tolleranza di {tolerance_minutes} minuti")
+        
+        return parsed_timestamp
     except Exception as e:
-        print(f"Timestamp validation error: {e}")
-        return False
+        logging.error(f"Errore nella validazione del timestamp: {e}")
+        raise
+
+def connect_to_db():
+    """Crea e ritorna una connessione al database MySQL."""
+    try:
+        conn = mysql.connector.connect(
+            host=MYSQL_HOST,
+            port=MYSQL_PORT,
+            database=MYSQL_DATABASE,
+            user=MYSQL_USER,
+            password=MYSQL_PASSWORD
+        )
+        return conn
+    except Error as e:
+        logging.error(f"Errore nella connessione al database: {e}")
+        raise
+
+def insert_operation_data(cursor, data: dict) -> (bool, Optional[str]):
+    """
+    Inserisce dati nelle tabelle Operazioni, Forgiatura/CNC, Anomalia_operazione.
+    Restituisce (True, None) se successo, altrimenti (False, messaggio_errore).
+    """
+    try:
+        # Inserimento operazione
+        insert_operazione = """
+        INSERT INTO Operazioni (id_commessa, codice_pezzo, codice_macchinario, codice_operatore, timestamp_inizio, timestamp_fine)
+        VALUES (%s, %s, %s, %s, %s, %s)
+        """
+        cursor.execute(insert_operazione, (
+            data['id_commessa'],
+            data['codice_pezzo'],
+            data['codice_macchinario'],
+            data['codice_operatore'],
+            data['timestamp_inizio'],
+            data['timestamp_fine']
+        ))
+        id_operazione = cursor.lastrowid
+
+        # Inserimento dettagli in base al tipo di operazione
+        if data['tipo_operazione'] == 'forgiatura':
+            insert_forgiatura = """
+            INSERT INTO Forgiatura (id_operazione, peso_effettivo, temperatura_effettiva, id_anomalia)
+            VALUES (%s, %s, %s, NULL)
+            """
+            cursor.execute(insert_forgiatura, (
+                id_operazione,
+                data.get('peso_effettivo'),
+                data.get('temperatura_effettiva')
+            ))
+
+        elif data['tipo_operazione'] == 'cnc':
+            insert_cnc = """
+            INSERT INTO CNC (id_operazione, numero_pezzi_ora, tipo_fermo)
+            VALUES (%s, %s, %s)
+            """
+            cursor.execute(insert_cnc, (
+                id_operazione,
+                data.get('numero_pezzi_ora'),
+                data.get('tipo_fermo')
+            ))
+        else:
+            # Tipo operazione sconosciuto
+            return False, "Tipo operazione non riconosciuto"
+
+        # Inserimento anomalie se presenti
+        if 'anomalia' in data and isinstance(data['anomalia'], list) and data['anomalia']:
+            insert_anomalia_operazione = """
+            INSERT INTO Anomalia_operazione (id_anomalia, id_operazione, note)
+            VALUES (%s, %s, %s)
+            """
+            for anomaly in data['anomalia']:
+                anomaly_id = anomaly['id']
+                cursor.execute(insert_anomalia_operazione, (anomaly_id, id_operazione, 'Anomalia registrata'))
+
+        return True, None
+
+    except Exception as e:
+        logging.error(f'Errore durante l\'inserimento nel database: {e}', exc_info=True)
+        return False, str(e)
+
+def main_etl(rows: List[dict]) -> int:
+    """
+    Esegue il processo ETL sui dati forniti.
+    Ritorna 200 se successo, 500 in caso di errore.
+    """
+    global etl_status
+    etl_status['running'] = True
+    etl_status['last_run'] = datetime.utcnow().isoformat()
+
+    my_conn = None
+    my_cursor = None
+
+    try:
+        # Connessione al database
+        my_conn = connect_to_db()
+        my_cursor = my_conn.cursor(dictionary=True)
+        logging.info('Connesso a MySQL.')
+
+        # Disattiviamo le foreign key all'inizio
+        disable_foreign_keys(my_cursor)
+
+        for i, data in enumerate(rows):
+            logging.debug(f"Processo record #{i}: {data}")
+            try:
+                # Validazione e parsing dei dati con Pydantic
+                operazione = Operazione(**data)
+                operazione_dict = operazione.dict()
+
+                # Inserimento nel database
+                success, error_msg, id_operazione = insert_operation_data(my_cursor, operazione_dict)
+                if success:
+                    logging.info(f"Record inserito con successo: ID {id_operazione}")
+                else:
+                    # Inserimento fallito, registriamo l'anomalia
+                    if id_operazione is None:
+                        # Se non abbiamo l'ID operazione, non possiamo inserire l'anomalia
+                        logging.error(f"Inserimento fallito per il record {data}: {error_msg}")
+                    else:
+                        # Se l'inserimento dell'operazione ha fallito, potremmo voler registrare l'anomalia
+                        # Tuttavia, senza un ID operazione, non è possibile associarla
+                        logging.error(f"Inserimento fallito per il record {data}: {error_msg}")
+
+            except ValidationError as ve:
+                # Gestione degli errori di validazione
+                errors = ve.errors()
+                logging.warning(f"Record invalido: {data} - Anomalie: {errors}")
+
+                # Prepariamo le anomalie da inserire
+                anomalie = []
+                    for error in errors:
+                        field = error['loc'][-1]
+                        message = error['msg']
+                        anomaly_id = FIELD_TO_ANOMALIA_ID.get(field, 999)  # Usa 999 se il campo non è mappato
+                        anomalie.append({'id': anomaly_id, 'message': f"{field}: {message}"})
+
+                # Inseriamo comunque il record con i campi invalidi impostati a None
+                operazione_dict = data.copy()
+                for error in errors:
+                    field = error['loc'][-1]
+                    operazione_dict[field] = None  # Impostiamo il campo a None se invalido
+
+                try:
+                    success, error_msg, id_operazione = insert_operation_data(my_cursor, operazione_dict)
+                    if success:
+                        logging.info(f"Record inserito con campi invalidi: ID {id_operazione}")
+                        # Inseriamo le anomalie nel database
+                        if anomalie and id_operazione:
+                            insert_anomalia_operazione = """
+                            INSERT INTO Anomalia_operazione (id_anomalia, id_operazione, note)
+                            VALUES (%s, %s, %s)
+                            """
+                            for anomaly in anomalie:
+                                anomaly_id = anomaly.get('id')
+                                message = anomaly.get('message')
+                                my_cursor.execute(insert_anomalia_operazione, (anomaly_id, id_operazione, message))
+                    else:
+                        # Se anche l'inserimento del record fallisce, registriamo l'errore
+                        logging.error(f"Inserimento fallito per il record con anomalie {data}: {error_msg}")
+                except Exception as e:
+                    logging.error(f"Errore durante l'inserimento del record invalidato {data}: {e}", exc_info=True)
+
+            except Exception as e:
+                # Gestione di altri errori
+                logging.error(f"Errore durante il processamento del record {data}: {e}", exc_info=True)
+
+        # Commit delle transazioni
+        my_conn.commit()
+        enable_foreign_keys(my_cursor)
+
+        logging.info("ETL completato con successo.")
+        etl_status['last_success'] = datetime.utcnow().isoformat()
+        etl_status['last_error'] = None
+
+        return 200
+
+    except Exception as e:
+        logging.error(f'Errore generico ETL: {e}', exc_info=True)
+        periodic_logger.error(f"ETL fallito con errore: {e}")
+        etl_status['last_error'] = str(e)
+        return 500
+
+    finally:
+        etl_status['running'] = False
+        periodic_logger.info("ETL completato")
+
+        # Chiusura cursore e connessione
+        if my_cursor:
+            my_cursor.close()
+        if my_conn and my_conn.is_connected():
+            my_conn.close()
+            logging.info('Connessione a MySQL chiusa.')
 
 def save_records(cursor, connection, query, records, retries=3):
     """Funzione generica per salvare record nel database con retry."""
@@ -179,8 +433,8 @@ def show_tables():
     colnames_forgiatura = [desc[0] for desc in my_cursor.description]
 
     # Dati dalla tabella dati_anomali
-    my_cursor.execute("SELECT * FROM dati_anomali")
-    data_anomali = my_cursor.fetchall()
+    my_cursor.execute("SELECT * FROM CNC")
+    data_cnc = my_cursor.fetchall()
     colnames_anomali = [desc[0] for desc in my_cursor.description]
 
     # Chiusura connessione
@@ -190,274 +444,26 @@ def show_tables():
         my_conn.close()
 
     # Ritorno dei dati e delle colonne
-    return (data_forgiatura, colnames_forgiatura), (data_anomali, colnames_anomali)
+    return (data_forgiatura, colnames_forgiatura), (data_cnc, colnames_anomali)
 
-def run_etl():
-    global etl_status
-    etl_status['running'] = True
-    etl_status['last_run'] = datetime.utcnow().isoformat()
-
-    try:
-        periodic_logger.info('Operazione periodica avviata.')
-        # Connessione a PostgreSQL
-        pg_conn = psycopg2.connect(
-            host=PG_HOST,
-            port=PG_PORT,
-            database=PG_DATABASE,
-            user=PG_USER,
-            password=PG_PASSWORD
-        )
-        pg_cursor = pg_conn.cursor()
-        logging.info('Connesso a PostgreSQL.')
-
-        # Connessione a MySQL
-        my_conn = mysql.connector.connect(
-            host=MYSQL_HOST,
-            port=MYSQL_PORT,
-            database=MYSQL_DATABASE,
-            user=MYSQL_USER,
-            password=MYSQL_PASSWORD
-        )
-        my_cursor = my_conn.cursor()
-        logging.info('Connesso a MySQL.')
-
-        # Estrazione dei dati dalla tabella staging
-        pg_cursor.execute("SELECT * FROM RawForgiatura")
-        raw_data = pg_cursor.fetchall()
-        colnames = [desc[0] for desc in pg_cursor.description]
-        logging.info(f'Estrazione di {len(raw_data)} record da PostgreSQL.')
-
-        # Registrazione dei risultati
-        periodic_logger.info(f'Estrazione di {len(raw_data)} record da PostgreSQL.')
-
-        # Carica gli ID macchina validi in memoria per confronto
-        # my_cursor.execute("SELECT codice_macchinario FROM Macchinari")
-        # valid_machine_ids = {row[0] for row in pg_cursor.fetchall()}
-
-        transformed_data = []
-        invalid_records = []  # Per salvare i record con anomalie
-
-        for row in raw_data:
-            data = dict(zip(colnames, row))
-            try:
-                # Escludere la colonna "anomalia" dalla validazione
-                columns_to_check = {key: value for key, value in data.items() if key != 'anomalia'}
-
-                tipo_anomalia = []  # Lista per raccogliere le anomalie del record
-
-                # Regola: Valori mancanti
-                for key, value in columns_to_check.items():
-                    if value is None or (isinstance(value, float) and math.isnan(value)):
-                        tipo_anomalia.append(f"{key} mancante")
-
-                # Regola: Valore fuori range
-                if 'peso_effettivo' in data and (data['peso_effettivo'] < 0 or data['peso_effettivo'] > 1000):
-                    tipo_anomalia.append("Peso fuori range")
-
-                if 'temperatura_effettiva' in data and (data['temperatura_effettiva'] < -50 or data['temperatura_effettiva'] > 150):
-                    tipo_anomalia.append("Temperatura fuori range")
-
-                # Regola: ID macchina non valido
-                # if 'id_macchina' in data and data['id_macchina'] not in valid_machine_ids:
-                    # tipo_anomalia.append("ID macchina non valido")
-                
-                try:
-                    logging.info(f"Timestamp originale: {data['timestamp_ricevuto']}")
-
-                    # Parsing e validazione del timestamp
-                    if isinstance(data['timestamp_ricevuto'], datetime):
-                        parsed_timestamp = data['timestamp_ricevuto']
-                        is_valid_timestamp = True
-                    else:
-                        is_valid_timestamp, parsed_timestamp = validate_timestamp(data['timestamp_ricevuto'])
-
-                    # Se il timestamp non è valido, aggiungi l'anomalia
-                    if not is_valid_timestamp:
-                        tipo_anomalia.append("Timestamp ricevuto non valido o fuori intervallo")
-
-                    # Salva il timestamp parsato nel dizionario
-                    data['timestamp_ricevuto'] = parsed_timestamp
-
-                    logging.info(f"Timestamp parsato: {data['timestamp_ricevuto']}, Ora attuale (UTC): {datetime.utcnow()}")
-                except (ValueError, TypeError) as e:
-                    logging.error(f"Errore nel parsing del timestamp '{data['timestamp_ricevuto']}': {e}")
-                    tipo_anomalia.append("Timestamp ricevuto non valido")
-
-                # Se ci sono anomalie, salva il record nei dati invalidi
-                if tipo_anomalia:
-                    data['tipo_anomalia'] = "; ".join(tipo_anomalia)
-                    logging.warning(f"Record con anomalie rilevate: {data['tipo_anomalia']} - {data}")
-                    invalid_records.append(data)
-                    continue
-
-                # Trasforma i dati validi
-                transformed_record = (
-                    data['id_pezzo'],
-                    data['peso_effettivo'],
-                    data['temperatura_effettiva'],
-                    data['timestamp_ricevuto'],
-                    data['id_macchina']
-                )
-                transformed_data.append(transformed_record)
-            except KeyError as e:
-                record_id = data.get('id', 'N/A')
-                logging.error(f'Errore nella trasformazione dei dati per il record {record_id}: chiave mancante {e}')
-                continue
-
-        logging.info('Trasformazione dei dati completata.')
-
-        # Log dei record invalidi
-        if invalid_records:
-            logging.warning(f'Trovati {len(invalid_records)} record con valori NaN/NULL.')
-
-        mysql_insert_success = False
-
-        # Trasformazione dei record non validi
-        invalid_records_tuples = [
-            (
-                record['id_pezzo'],
-                record['peso_effettivo'],
-                record['temperatura_effettiva'],
-                record['timestamp_ricevuto'],
-                record['id_macchina'],
-                record['tipo_anomalia']
-            )
-            for record in invalid_records
-        ]
-
-        # Inserimento dei dati validi
-        try:
-            disable_foreign_keys(my_cursor)
-            insert_query_valid = """
-            INSERT INTO Forgiatura (codice_pezzo, peso_effettivo, temperatura_effettiva, timestamp, codice_macchinario)
-            VALUES (%s, %s, %s, %s, %s)
-            """
-            if save_records(my_cursor, my_conn, insert_query_valid, transformed_data):
-                mysql_insert_success = True
-                periodic_logger.info(f"Salvati {len(transformed_data)} record nella tabella Forgiatura in MySQL")
-            else:
-                etl_status['last_error'] = 'Errore durante l\'inserimento dei dati validi in MySQL.'
-        except Exception as e:
-            logging.error(f'Errore durante il salvataggio dei dati validi: {e}')
-        finally:
-            enable_foreign_keys(my_cursor)
-
-        # Inserimento dei dati non validi
-        try:
-            disable_foreign_keys(my_cursor)
-            insert_query_invalid = """
-            INSERT INTO dati_anomali (codice_pezzo, peso_effettivo, temperatura_effettiva, timestamp, codice_macchinario, tipo_anomalia)
-            VALUES (%s, %s, %s, %s, %s, %s)
-            """
-            if save_records(my_cursor, my_conn, insert_query_invalid, invalid_records_tuples):
-                mysql_insert_success = True
-                periodic_logger.info(f"Salvati {len(invalid_records_tuples)} record nella tabella dati_anomali in MySQL")
-            else:
-                etl_status['last_error'] = 'Errore durante l\'inserimento dei dati non validi in MySQL.'
-                mysql_insert_success = False
-        except Exception as e:
-            logging.error(f'Errore durante il salvataggio dei dati non validi: {e}')
-            etl_status['last_error'] = str(e)
-        finally:
-            enable_foreign_keys(my_cursor)
-
-        if mysql_insert_success:
-            try:
-                # Eliminazione dei dati solo se l'inserimento ha avuto successo
-                delete_query = """
-                DELETE FROM RawForgiatura
-                WHERE id = ANY(%s)
-                """
-                pg_cursor.execute(delete_query, ([row[0] for row in raw_data],))
-                pg_conn.commit()
-                logging.info(f'Eliminati {pg_cursor.rowcount} record processati dal database di staging.')
-
-                etl_status['last_success'] = datetime.utcnow().isoformat()
-                etl_status['last_error'] = None
-            except psycopg2.Error as e:
-                logging.error(f'Errore durante l\'eliminazione dei dati in Postgres: {e}')
-                etl_status['last_error'] = f'Errore durante l\'eliminazione in PostgreSQL: {e}'
-                pg_conn.rollback()
-
-    except Exception as e:
-        logging.error(f'Errore generico: {e}')
-        periodic_logger.error(f"ETL fallito con errore: {e}")
-        etl_status['last_error'] = str(e)
-
-    finally:
-        etl_status['running'] = False
-        periodic_logger.info(f"ETL completato con successo")
-
-        # Chiusura delle connessioni
-        if 'my_cursor' in locals() and my_cursor:
-            my_cursor.close()
-        if 'my_conn' in locals() and my_conn.is_connected():
-            my_conn.close()
-            logging.info('Connessione a MySQL chiusa.')
-        if 'pg_cursor' in locals() and pg_cursor:
-            pg_cursor.close()
-        if 'pg_conn' in locals() and pg_conn:
-            pg_conn.close()
-            logging.info('Connessione a PostgreSQL chiusa.')
-
-def insert(data):
-    """Inserisce i dati nella tabella Forgiatura in MySQL."""
-    try:
-        # Connessione a MySQL
-        my_conn = mysql.connector.connect(
-            host=MYSQL_HOST,
-            port=MYSQL_PORT,
-            database=MYSQL_DATABASE,
-            user=MYSQL_USER,
-            password=MYSQL_PASSWORD
-        )
-        my_cursor = my_conn.cursor()
-        logging.info('Connesso a MySQL.')
-        
-        # Controllo che i dati siano una lista/tupla con 4 elementi
-        #if not isinstance(data, (list, tuple)) or len(data) != 4:
-        #    logging.error('Dati non validi. Assicurati che siano 4 colonne in un array o tupla.')
-        #    return
-
-        disable_foreign_keys(my_cursor)
-
-        # Inserimento dei dati nella tabella
-        query = """
-                INSERT INTO Forgiatura (codice_pezzo, peso_effettivo, temperatura_effettiva, timestamp, codice_macchinario, id_anomalia)
-                VALUES (%s, %s, %s, %s, %s, %s);
-                """
-        my_cursor.execute(query, (
-                data["codice_pezzo"],
-                data["peso_effettivo"],
-                data["temperatura_effettiva"],
-                data["timestamp"],
-                data["codice_macchinario"],
-                data["id_anomalia"]
-            ))
-
-        logging.info(f'Query eseguit: {query}')
-
-        enable_foreign_keys(my_cursor)
-        
-        # Commit per confermare la transazione
-        my_conn.commit()
-        logging.info(f'Record inserito con successo: {data}')
-
-    except mysql.connector.Error as e:
-        logging.error(f'Errore durante l\'inserimento: {e}')
-    finally:
-        if my_cursor:
-            my_cursor.close()
-        if my_conn:
-            my_conn.close()
+def require_api_key(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        api_key = request.headers.get('X-API-KEY')
+        if not api_key or api_key != os.getenv('API_KEY'):
+            logging.warning("Tentativo di accesso non autorizzato.")
+            return jsonify({'error': 'Unauthorized'}), 401
+        return f(*args, **kwargs)
+    return decorated
 
 @app.route('/run-etl', methods=['POST'])
+@require_api_key
 def trigger_etl():
     if etl_status['running']:
         return jsonify({'status': 'ETL già in esecuzione.'}), 400
 
     # Avvia l'ETL in un thread separato per evitare il blocco del server
-    thread = Thread(target=run_etl)
+    thread = Thread(target=main_etl)
     thread.start()
 
     logging.info('Processo ETL avviato tramite API.')
@@ -466,11 +472,6 @@ def trigger_etl():
 @app.route('/status', methods=['GET'])
 def get_status():
     return jsonify(etl_status), 200
-
-@app.route('/run', methods=['GET'])
-def run():
-    run_etl()
-    return jsonify(etl_status, data_processed), 200
 
 @app.route('/data', methods=['GET'])
 def data():
@@ -494,6 +495,7 @@ def data():
         return jsonify({"error": str(e)}), 500
 
 @app.route('/clear-logs', methods=['GET', 'POST'])
+@require_api_key
 def clear_logs():
     log_file_path = 'logs/etl.log'  # Percorso del file di log
     clear_log_file(log_file_path)
@@ -502,6 +504,7 @@ def clear_logs():
     return jsonify({'message': 'File di log pulito con successo.'}), 200
 
 @app.route('/insert', methods=['POST'])
+@require_api_key
 def insert_endpoint():
     """Endpoint per inserire dati nella tabella Forgiatura."""
     try:
@@ -509,24 +512,20 @@ def insert_endpoint():
         data = request.get_json()
         logging.info(f'Dati ricevuti: {data}')
         
-        # Verifica che i dati siano validi
-        # if not data or not isinstance(data, list) or len(data) != 4:
-        #    return jsonify({'error': 'Dati non validi. Aspettati un array di 4 elementi.'}), 400
+        if not isinstance(data, list):
+            return jsonify({'error': 'I dati devono essere una lista di record.'}), 400
 
         # Chiama la funzione di inserimento
-        insert(data)
+        result = main_etl(data)
         
-        return jsonify({'message': 'Dati inseriti con successo.'}), 200
+        if result == 200:
+            return jsonify({'message': 'Dati inseriti con successo.'}), 200
+        else:
+            return jsonify({'error': 'Inserimento fallito.'}), 500
 
     except Exception as e:
         logging.error(f'Errore nella gestione della richiesta: {e}')
         return jsonify({'error': 'Errore del server interno.'}), 500
-
-@app.route('/processed-data', methods=['GET'])
-def get_processed_data():
-    if not data_processed['data']:
-        return jsonify({'data': [], 'message': 'Nessun dato processato.'}), 200
-    return jsonify(data_processed), 200
 
 @app.route('/logs', methods=['GET'])
 def get_logs():
