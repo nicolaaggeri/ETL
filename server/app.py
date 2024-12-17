@@ -495,11 +495,11 @@ def aggiorna_stato_ordini():
             return
 
         for ordine in ordini:
-            if 'id' not in ordine:
-                logging.info(f"Errore: la chiave 'id' non esiste nell'ordine: {ordine}")
+            if 'id_ordine' not in ordine:
+                logging.info(f"Errore: la chiave 'id_ordine' non esiste nell'ordine: {ordine}")
                 continue
 
-            id_ordine = ordine['id']
+            id_ordine = ordine['id_ordine']
 
             # 2️ Seleziona i pezzi associati a questo ordine
             query_pezzi = """
@@ -548,7 +548,7 @@ def aggiorna_stato_ordine(cursor, id_ordine):
     query_aggiorna_ordine = """
     UPDATE ordine 
     SET stato = 'TERMINATO', data_fine = %s 
-    WHERE id = %s;
+    WHERE id_ordine = %s;
     """
     cursor.execute(query_aggiorna_ordine, (data_fine, id_ordine))
     logging.info(f"Stato dell'ordine {id_ordine} aggiornato a 'TERMINATO' con data_fine = {data_fine}.")
