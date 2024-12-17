@@ -476,7 +476,7 @@ from datetime import date
 def aggiorna_stato_ordini():
     try:
         conn = connect_to_db()
-        cursor = my_conn.cursor(dictionary=True)
+        cursor = conn.cursor(dictionary=True)
         logging.info('Connesso a MySQL.')
 
         # 1️ Seleziona tutti gli ordini con stato 'IN ATTESA'
