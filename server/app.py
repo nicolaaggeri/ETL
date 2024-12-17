@@ -294,6 +294,20 @@ def main_etl(rows: List[dict]) -> int:
                 success, error_msg, id_operazione = insert_operation_data(my_cursor, operazione_dict)
                 if success:
                     logging.info(f"Record inserito con successo: ID {id_operazione}")
+
+                    # Sottrai 1 dalla colonna 'quantita' per il pezzo corrispondente
+                    id_ordine = data.get('id_ordine')
+                    codice_pezzo = data.get('codice_pezzo')
+                    
+                    if id_ordine and codice_pezzo:
+                        update_quantita_query = """
+                        UPDATE pezzi_ordine
+                        SET quantita = quantita - 1
+                        WHERE id_ordine = %s AND id_pezzo = %s AND quantita > 0;
+                        """
+                        my_cursor.execute(update_quantita_query, (id_ordine, codice_pezzo))
+                        logging.info(f"Quantità decrementata per id_ordine={id_ordine}, codice_pezzo={codice_pezzo}")
+
                 else:
                     logging.error(f"Inserimento fallito per il record {data}: {error_msg}")
 
@@ -422,9 +436,12 @@ def get_pezzo_min_idordine():
 
         # Query per selezionare i pezzi con l'id_ordine minore
         query = """
-        SELECT id_ordine, id_pezzo 
-        FROM pezzi_ordine 
-        ORDER BY id_ordine ASC 
+        SELECT po.id_ordine, po.id_pezzo
+        FROM pezzi_ordine po
+        JOIN ordine o ON po.id_ordine = o.id_ordine
+        WHERE o.stato = 'IN ATTESA' 
+        AND po.quantita != 0
+        ORDER BY po.id_ordine ASC
         LIMIT 5;
         """
         
