@@ -74,7 +74,7 @@ class Anomalia(BaseModel):
     id: int
 
 class Operazione(BaseModel):
-    id_commessa: int
+    id_ordine: int
     codice_pezzo: str
     codice_macchinario: str
     codice_operatore: str
@@ -216,11 +216,11 @@ def insert_operation_data(cursor, data: dict) -> (bool, Optional[str], Optional[
     try:
         # Inserimento operazione
         insert_operazione = """
-        INSERT INTO Operazioni (id_commessa, codice_pezzo, codice_macchinario, codice_operatore, timestamp_inizio, timestamp_fine)
+        INSERT INTO operazioni (id_ordine, codice_pezzo, codice_macchinario, codice_operatore, timestamp_inizio, timestamp_fine)
         VALUES (%s, %s, %s, %s, %s, %s)
         """
         cursor.execute(insert_operazione, (
-            data['id_commessa'],
+            data['id_ordine'],
             data['codice_pezzo'],
             data['codice_macchinario'],
             data['codice_operatore'],
@@ -232,7 +232,7 @@ def insert_operation_data(cursor, data: dict) -> (bool, Optional[str], Optional[
         # Inserimento dettagli in base al tipo di operazione
         if data['tipo_operazione'] == 'forgiatura':
             insert_forgiatura = """
-            INSERT INTO Forgiatura (id_operazione, peso_effettivo, temperatura_effettiva, id_anomalia)
+            INSERT INTO forgiatura (id_operazione, peso_effettivo, temperatura_effettiva, id_anomalia)
             VALUES (%s, %s, %s, NULL)
             """
             cursor.execute(insert_forgiatura, (
@@ -243,7 +243,7 @@ def insert_operation_data(cursor, data: dict) -> (bool, Optional[str], Optional[
 
         elif data['tipo_operazione'] == 'cnc':
             insert_cnc = """
-            INSERT INTO CNC (id_operazione, numero_pezzi_ora, tipo_fermo)
+            INSERT INTO cnc (id_operazione, numero_pezzi_ora, tipo_fermo)
             VALUES (%s, %s, %s)
             """
             cursor.execute(insert_cnc, (
@@ -258,7 +258,7 @@ def insert_operation_data(cursor, data: dict) -> (bool, Optional[str], Optional[
         # Inserimento anomalie se presenti
         if 'anomalia' in data and isinstance(data['anomalia'], list) and data['anomalia']:
             insert_anomalia_operazione = """
-            INSERT INTO Anomalia_operazione (id_anomalia, id_operazione, note)
+            INSERT INTO anomalia_operazione (id_anomalia, id_operazione, note)
             VALUES (%s, %s, %s)
             """
             for anomaly in data['anomalia']:
@@ -316,7 +316,7 @@ def main_etl(rows: List[dict]) -> int:
                         logging.info(f"Record inserito con campi invalidi: ID {id_operazione}")
                         if anomalie and id_operazione:
                             insert_anomalia_operazione = """
-                            INSERT INTO Anomalia_operazione (id_anomalia, id_operazione, note)
+                            INSERT INTO anomalia_operazione (id_anomalia, id_operazione, note)
                             VALUES (%s, %s, %s)
                             """
                             for anomaly in anomalie:
@@ -392,12 +392,12 @@ def show_tables():
     logging.info('Connesso a MySQL.')
 
     # Dati dalla tabella Forgiatura
-    my_cursor.execute("SELECT * FROM Forgiatura")
+    my_cursor.execute("SELECT * FROM forgiatura")
     data_forgiatura = my_cursor.fetchall()
     colnames_forgiatura = [desc[0] for desc in my_cursor.description]
 
     # Dati dalla tabella dati_anomali
-    my_cursor.execute("SELECT * FROM CNC")
+    my_cursor.execute("SELECT * FROM cnc")
     data_cnc = my_cursor.fetchall()
     colnames_anomali = [desc[0] for desc in my_cursor.description]
 
