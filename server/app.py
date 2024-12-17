@@ -470,6 +470,94 @@ def get_pezzo_min_idordine():
             my_conn.close()
             logging.info("Connessione chiusa.")
 
+import mysql.connector
+from datetime import date
+
+def aggiorna_stato_ordini():
+    try:
+        conn = connect_to_db()
+        cursor = my_conn.cursor(dictionary=True)
+        logging.info('Connesso a MySQL.')
+
+        # 1️ Seleziona tutti gli ordini con stato 'IN ATTESA'
+        query_ordini = """
+        SELECT id_ordine 
+        FROM ordine 
+        WHERE stato = 'IN ATTESA';
+        """
+        cursor.execute(query_ordini)
+        ordini = cursor.fetchall()
+
+        if not ordini:
+            logging.info("Non ci sono ordini 'IN ATTESA'.")
+            return
+
+        for ordine in ordini:
+            id_ordine = ordine['id']
+
+            # 2️ Seleziona i pezzi associati a questo ordine
+            query_pezzi = """
+            SELECT quantita 
+            FROM pezzi_ordine 
+            WHERE id_ordine = %s;
+            """
+            cursor.execute(query_pezzi, (id_ordine,))
+            pezzi = cursor.fetchall()
+
+            if not pezzi:
+                # Se non ci sono pezzi associati, setta l'ordine a TERMINATO
+                logging.info(f"Ordine {id_ordine}: Nessun pezzo associato. Imposto lo stato a TERMINATO.")
+                aggiorna_stato_ordine(cursor, id_ordine)
+                continue
+
+            # 3️ Verifica se tutti i pezzi hanno quantita = 0
+            quantita_totale = sum(pezzo['quantita'] for pezzo in pezzi)
+            
+            if quantita_totale == 0:
+                # Se tutti i pezzi hanno quantità 0, imposta l'ordine a TERMINATO
+                logging.info(f"Ordine {id_ordine}: Tutte le quantità sono 0. Imposto lo stato a TERMINATO.")
+                aggiorna_stato_ordine(cursor, id_ordine)
+
+            # 4 Elimina tutti i pezzi con quantità = 0
+            elimina_pezzi_quantita_zero(cursor, id_ordine)
+        
+        # Effettua il commit per salvare le modifiche
+        conn.commit()
+
+    except mysql.connector.Error as err:
+        logging.info(f"Errore durante l'aggiornamento: {err}")
+        if conn:
+            conn.rollback()
+    finally:
+        if cursor:
+            cursor.close()
+        if conn and conn.is_connected():
+            conn.close()
+
+def aggiorna_stato_ordine(cursor, id_ordine):
+    """
+    Imposta lo stato dell'ordine a 'TERMINATO' e aggiorna la data_fine con la data di oggi.
+    """
+    data_fine = date.today().strftime('%Y-%m-%d')
+    query_aggiorna_ordine = """
+    UPDATE ordine 
+    SET stato = 'TERMINATO', data_fine = %s 
+    WHERE id = %s;
+    """
+    cursor.execute(query_aggiorna_ordine, (data_fine, id_ordine))
+    logging.info(f"Stato dell'ordine {id_ordine} aggiornato a 'TERMINATO' con data_fine = {data_fine}.")
+
+def elimina_pezzi_quantita_zero(cursor, id_ordine):
+    """
+    Elimina dalla tabella pezzi_ordine tutti i pezzi con quantità = 0.
+    """
+    query_elimina_pezzi = """
+    DELETE FROM pezzi_ordine 
+    WHERE id_ordine = %s AND quantita = 0;
+    """
+    cursor.execute(query_elimina_pezzi, (id_ordine,))
+    logging.info(f"Pezzi con quantità 0 eliminati per l'ordine {id_ordine}.")
+
 def require_api_key(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -501,6 +589,15 @@ def trigger_etl():
     except Exception as e:
         logging.error(f'Errore nell\'avvio dell\'ETL: {e}')
         return jsonify({'error': 'Errore del server interno.'}), 500
+
+@app.route('/aggiorna/ordine', methods=['POST'])
+def aggiorna_ordine():
+    try:
+        aggiorna_stato_ordini()
+        return jsonify({'message': 'Ordine aggiornato con successo'}), 200
+    except Exception as e:
+        logging.error(f"Errore nell'aggiornamento della tabella ordine: {e}")
+        return jsonify({'error': 'Impossibile aggiornare ordine.'}), 500
 
 @app.route('/status', methods=['GET'])
 def get_status():
