@@ -410,6 +410,49 @@ def show_tables():
     # Ritorno dei dati e delle colonne
     return (data_forgiatura, colnames_forgiatura), (data_cnc, colnames_anomali)
 
+    import mysql.connector
+import json
+
+def get_pezzo_min_idordine():
+    try:
+
+        my_conn = connect_to_db()
+        my_cursor = my_conn.cursor(dictionary=True)
+        logging.info('Connesso a MySQL.')
+
+        # Query per selezionare il pezzo con l'id_ordine minore
+        query = """
+        SELECT id_ordine, id_pezzo 
+        FROM pezzi_ordine 
+        ORDER BY id_ordine ASC 
+        LIMIT 1;
+        """
+        
+        my_cursor.execute(query)
+        result = my_cursor.fetchone()
+
+        if result is not None:
+            # Composizione del JSON
+            response = [
+                {
+                    "id_ordine": result['id_ordine'],
+                    "codice_pezzo": result['id_pezzo']
+                }
+            ]
+        else:
+            response = []
+
+        return response
+
+    except mysql.connector.Error as err:
+        print(f"Errore: {err}")
+        return []
+
+    finally:
+        if my_conn.is_connected():
+            my_cursor.close()
+            my_conn.close()
+
 def require_api_key(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -499,6 +542,16 @@ def insert_endpoint():
     except Exception as e:
         logging.error(f'Errore nella gestione della richiesta: {e}')
         return jsonify({'error': 'Errore del server interno.'}), 500
+
+@app.route('/ordine', methods=['GET'])
+@require_api_key
+def get_ordine():
+    try:
+        json = get_pezzo_min_idordine()
+        return jsonify(json), 200
+    except Exception as e:
+        logging.error(f'Errore nella creazione dell\'ordine: {e}')
+        return jsonify({'error': 'Impossibile creare ordine.'}), 500
 
 @app.route('/logs', methods=['GET'])
 def get_logs():
