@@ -425,7 +425,7 @@ def get_pezzo_min_idordine():
         SELECT id_ordine, id_pezzo 
         FROM pezzi_ordine 
         ORDER BY id_ordine ASC 
-        LIMIT 1;
+        LIMIT 5;
         """
         
         my_cursor.execute(query)
