@@ -488,11 +488,17 @@ def aggiorna_stato_ordini():
         cursor.execute(query_ordini)
         ordini = cursor.fetchall()
 
+        logging.info(f"Ordini trovati: {ordini}")
+
         if not ordini:
             logging.info("Non ci sono ordini 'IN ATTESA'.")
             return
 
         for ordine in ordini:
+            if 'id' not in ordine:
+                logging.info(f"Errore: la chiave 'id' non esiste nell'ordine: {ordine}")
+                continue
+
             id_ordine = ordine['id']
 
             # 2️ Seleziona i pezzi associati a questo ordine
