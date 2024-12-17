@@ -415,12 +415,12 @@ import json
 
 def get_pezzo_min_idordine():
     try:
-
+        # Connessione al database
         my_conn = connect_to_db()
         my_cursor = my_conn.cursor(dictionary=True)
         logging.info('Connesso a MySQL.')
 
-        # Query per selezionare il pezzo con l'id_ordine minore
+        # Query per selezionare i pezzi con l'id_ordine minore
         query = """
         SELECT id_ordine, id_pezzo 
         FROM pezzi_ordine 
@@ -429,29 +429,29 @@ def get_pezzo_min_idordine():
         """
         
         my_cursor.execute(query)
-        result = my_cursor.fetchone()
+        results = my_cursor.fetchall()  # Ottieni tutte le righe
 
-        if result is not None:
-            # Composizione del JSON
-            response = [
-                {
-                    "id_ordine": result['id_ordine'],
-                    "codice_pezzo": result['id_pezzo']
-                }
-            ]
-        else:
-            response = []
+        logging.info(results)
 
+        # Composizione del JSON
+        response = []
+        for row in results:
+            response.append({
+                "id_ordine": row['id_ordine'],
+                "id_pezzo": row['id_pezzo']
+            })
+        
         return response
 
     except mysql.connector.Error as err:
-        print(f"Errore: {err}")
+        logging.error(f"Errore: {err}")
         return []
 
     finally:
         if my_conn.is_connected():
             my_cursor.close()
             my_conn.close()
+            logging.info("Connessione chiusa.")
 
 def require_api_key(f):
     @wraps(f)
