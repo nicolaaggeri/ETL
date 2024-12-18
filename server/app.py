@@ -458,6 +458,14 @@ def get_pezzo_min_idordine():
                 "id_pezzo": row['id_pezzo']
             })
         
+        # Se non ci sono risultati, aggiungi 10 righe con id_ordine: None e id_pezzo da 0 a 9
+        if not results:
+            for i in range(10):
+                response.append({
+                    "id_ordine": None,
+                    "id_pezzo": i+1
+                })
+
         return response
 
     except mysql.connector.Error as err:
@@ -469,9 +477,6 @@ def get_pezzo_min_idordine():
             my_cursor.close()
             my_conn.close()
             logging.info("Connessione chiusa.")
-
-import mysql.connector
-from datetime import date
 
 def aggiorna_stato_ordini():
     try:
