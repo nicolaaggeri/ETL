@@ -302,8 +302,8 @@ def main_etl(rows: List[dict]) -> int:
                     if id_ordine and codice_pezzo:
                         update_quantita_query = """
                         UPDATE pezzi_ordine
-                        SET quantita = quantita - 1
-                        WHERE id_ordine = %s AND id_pezzo = %s AND quantita > 0;
+                        SET quantita_rimanente = quantita_rimanente - 1
+                        WHERE id_ordine = %s AND id_pezzo = %s AND quantita_rimanente < quantita_totale;
                         """
                         my_cursor.execute(update_quantita_query, (id_ordine, codice_pezzo))
                         logging.info(f"Quantità decrementata per id_ordine={id_ordine}, codice_pezzo={codice_pezzo}")
@@ -440,7 +440,7 @@ def get_pezzo_min_idordine():
         FROM pezzi_ordine po
         JOIN ordine o ON po.id_ordine = o.id_ordine
         WHERE o.stato = 'IN ATTESA' 
-        AND po.quantita != 0
+        AND po.quantita_rimanente <= po.quantita_totale
         ORDER BY po.id_ordine ASC
         LIMIT 5;
         """
@@ -496,7 +496,7 @@ def aggiorna_quantita_pezzi_ordine(response):
         # Query di aggiornamento
         query = """
         UPDATE defaultdb.pezzi_ordine
-        SET quantita = quantita - 1
+        SET quantita = quantita_rimanente - 1
         WHERE id_ordine = %s
         AND id_pezzo = %s;
         """
@@ -551,7 +551,7 @@ def aggiorna_stato_ordini():
 
             # 2️ Seleziona i pezzi associati a questo ordine
             query_pezzi = """
-            SELECT quantita 
+            SELECT quantita_rimanente 
             FROM pezzi_ordine 
             WHERE id_ordine = %s;
             """
@@ -565,15 +565,12 @@ def aggiorna_stato_ordini():
                 continue
 
             # 3️ Verifica se tutti i pezzi hanno quantita = 0
-            quantita_totale = sum(pezzo['quantita'] for pezzo in pezzi)
+            quantita_totale = sum(pezzo['quantita_rimanente'] for pezzo in pezzi)
             
             if quantita_totale == 0:
                 # Se tutti i pezzi hanno quantità 0, imposta l'ordine a TERMINATO
                 logging.info(f"Ordine {id_ordine}: Tutte le quantità sono 0. Imposto lo stato a TERMINATO.")
                 aggiorna_stato_ordine(cursor, id_ordine)
-
-            # 4 Elimina tutti i pezzi con quantità = 0
-            elimina_pezzi_quantita_zero(cursor, id_ordine)
         
         # Effettua il commit per salvare le modifiche
         conn.commit()
@@ -600,17 +597,6 @@ def aggiorna_stato_ordine(cursor, id_ordine):
     """
     cursor.execute(query_aggiorna_ordine, (data_fine, id_ordine))
     logging.info(f"Stato dell'ordine {id_ordine} aggiornato a 'TERMINATO' con data_fine = {data_fine}.")
-
-def elimina_pezzi_quantita_zero(cursor, id_ordine):
-    """
-    Elimina dalla tabella pezzi_ordine tutti i pezzi con quantità = 0.
-    """
-    query_elimina_pezzi = """
-    DELETE FROM pezzi_ordine 
-    WHERE id_ordine = %s AND quantita = 0;
-    """
-    cursor.execute(query_elimina_pezzi, (id_ordine,))
-    logging.info(f"Pezzi con quantità 0 eliminati per l'ordine {id_ordine}.")
 
 def require_api_key(f):
     @wraps(f)
