@@ -466,17 +466,60 @@ def get_pezzo_min_idordine():
                     "id_pezzo": i+1
                 })
 
-        return response
-
     except mysql.connector.Error as err:
         logging.error(f"Errore: {err}")
-        return []
 
     finally:
-        if my_conn.is_connected():
+        # Chiama aggiorna_quantita_pezzi_ordine solo se `response` contiene dati
+        if response:
+            logging.info(f"Eseguo aggiornamento della quantità con i seguenti dati: {response}")
+            try:
+                aggiorna_quantita_pezzi_ordine(response)
+            except Exception as e:
+                logging.error(f"Errore durante l'aggiornamento della quantità: {e}")
+        
+        # Chiudi la connessione solo se è stata creata con successo
+        if my_conn and my_conn.is_connected():
             my_cursor.close()
             my_conn.close()
-            logging.info("Connessione chiusa.")
+            logging.info("Connessione chiusa correttamente.")
+
+    return response  # Ritorna la lista `response`
+
+def aggiorna_quantita_pezzi_ordine(response):
+    try:
+        # Connessione al database
+        conn = connect_to_db()
+        cursor = conn.cursor(dictionary=True)
+        logging.info('Connesso a MySQL.')
+
+        # Query di aggiornamento
+        query = """
+        UPDATE defaultdb.pezzi_ordine
+        SET quantita = quantita - 1
+        WHERE id_ordine = %s
+        AND id_pezzo = %s;
+        """
+
+        # Esegui la query per ogni riga nella lista `response`
+        for row in response:
+            id_ordine = row['id_ordine']
+            id_pezzo = row['id_pezzo']
+            cursor.execute(query, (id_ordine, id_pezzo))
+
+        # Conferma le modifiche al database
+        conn.commit()
+        logging.info('Quantità aggiornata con successo per tutti i pezzi.')
+
+    except mysql.connector.Error as e:
+        logging.error(f'Errore durante l\'aggiornamento della quantità: {e}')
+    finally:
+        # Chiude il cursore e la connessione
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+            logging.info('Connessione al database chiusa.')
 
 def aggiorna_stato_ordini():
     try:
