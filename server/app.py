@@ -6,7 +6,7 @@ from flask import Flask, jsonify, request
 from threading import Thread
 import math
 import shutil
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone, timedelta, date
 from flask_cors import CORS
 from typing import List, Optional
 from pydantic import BaseModel, Field, ValidationError, validator
