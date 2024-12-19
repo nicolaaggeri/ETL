@@ -441,6 +441,7 @@ def get_pezzo_min_idordine():
         JOIN ordine o ON po.id_ordine = o.id_ordine
         WHERE o.stato = 'IN ATTESA' 
         AND po.quantita_rimanente <= po.quantita_totale
+        AND po.quantita_rimanente > 0
         ORDER BY po.id_ordine ASC
         LIMIT 5;
         """
@@ -531,7 +532,7 @@ def aggiorna_stato_ordini():
         query_ordini = """
         SELECT id_ordine 
         FROM ordine 
-        WHERE stato = 'IN ATTESA';
+        WHERE stato = 'IN ATTESA' or 'COMPLETATO';
         """
         cursor.execute(query_ordini)
         ordini = cursor.fetchall()
@@ -560,7 +561,7 @@ def aggiorna_stato_ordini():
 
             if not pezzi:
                 # Se non ci sono pezzi associati, setta l'ordine a TERMINATO
-                logging.info(f"Ordine {id_ordine}: Nessun pezzo associato. Imposto lo stato a TERMINATO.")
+                logging.info(f"Ordine {id_ordine}: Nessun pezzo associato. Imposto lo stato a COMPLETATO.")
                 aggiorna_stato_ordine(cursor, id_ordine)
                 continue
 
@@ -568,7 +569,7 @@ def aggiorna_stato_ordini():
             quantita_totale = sum(pezzo['quantita_rimanente'] for pezzo in pezzi)
             
             if quantita_totale == 0:
-                # Se tutti i pezzi hanno quantità 0, imposta l'ordine a TERMINATO
+                # Se tutti i pezzi hanno quantità 0, imposta l'ordine a COMPLETATO
                 logging.info(f"Ordine {id_ordine}: Tutte le quantità sono 0. Imposto lo stato a TERMINATO.")
                 aggiorna_stato_ordine(cursor, id_ordine)
         
@@ -587,16 +588,16 @@ def aggiorna_stato_ordini():
 
 def aggiorna_stato_ordine(cursor, id_ordine):
     """
-    Imposta lo stato dell'ordine a 'TERMINATO' e aggiorna la data_fine con la data di oggi.
+    Imposta lo stato dell'ordine a 'COMPLETATO' e aggiorna la data_fine con la data di oggi.
     """
     data_fine = date.today().strftime('%Y-%m-%d')
     query_aggiorna_ordine = """
     UPDATE ordine 
-    SET stato = 'TERMINATO', data_fine = %s 
+    SET stato = 'COMPLETATO', data_fine = %s 
     WHERE id_ordine = %s;
     """
     cursor.execute(query_aggiorna_ordine, (data_fine, id_ordine))
-    logging.info(f"Stato dell'ordine {id_ordine} aggiornato a 'TERMINATO' con data_fine = {data_fine}.")
+    logging.info(f"Stato dell'ordine {id_ordine} aggiornato a 'COMPLETATO' con data_fine = {data_fine}.")
 
 def require_api_key(f):
     @wraps(f)
