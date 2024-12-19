@@ -496,7 +496,7 @@ def aggiorna_quantita_pezzi_ordine(response):
         # Query di aggiornamento
         query = """
         UPDATE defaultdb.pezzi_ordine
-        SET quantita = quantita_rimanente - 1
+        SET quantita_rimanente = quantita_rimanente - 1
         WHERE id_ordine = %s
         AND id_pezzo = %s;
         """
