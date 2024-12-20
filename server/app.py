@@ -12,6 +12,7 @@ from typing import List, Optional
 from pydantic import BaseModel, Field, ValidationError, validator
 from functools import wraps
 from mysql.connector import Error
+import json
 
 # Configure logging
 logging.basicConfig(
@@ -424,11 +425,12 @@ def show_tables():
     # Ritorno dei dati e delle colonne
     return (data_forgiatura, colnames_forgiatura), (data_cnc, colnames_anomali)
 
-    import mysql.connector
-import json
-
 def get_pezzo_min_idordine():
     try:
+        # Inizializzazione delle variabili
+        my_conn = None
+        my_cursor = None
+
         # Connessione al database
         my_conn = connect_to_db()
         my_cursor = my_conn.cursor(dictionary=True)
@@ -448,8 +450,7 @@ def get_pezzo_min_idordine():
         
         my_cursor.execute(query)
         results = my_cursor.fetchall()  # Ottieni tutte le righe
-
-        logging.info(results)
+        logging.info(f"Risultati trovati: {results}")
 
         # Composizione del JSON
         response = []
@@ -464,11 +465,25 @@ def get_pezzo_min_idordine():
             for i in range(10):
                 response.append({
                     "id_ordine": None,
-                    "id_pezzo": i+1
+                    "id_pezzo": i + 1
                 })
-
+            
+            # Aggiornamento della quantità per ogni pezzo
+            query = """
+            UPDATE magazzino
+            SET quantita_disponibile = quantita_disponibile + 1
+            WHERE codice_pezzo = %s;
+            """
+            
+            for item in response:
+                try:
+                    my_cursor.execute(query, (item['id_pezzo'],))
+                    my_conn.commit()
+                except Exception as e:
+                    logging.error(f"Errore durante l'aggiornamento del pezzo {item['id_pezzo']}: {e}")
+                    
     except mysql.connector.Error as err:
-        logging.error(f"Errore: {err}")
+        logging.error(f"Errore di connessione al database: {err}")
 
     finally:
         # Chiama aggiorna_quantita_pezzi_ordine solo se `response` contiene dati
@@ -480,7 +495,7 @@ def get_pezzo_min_idordine():
                 logging.error(f"Errore durante l'aggiornamento della quantità: {e}")
         
         # Chiudi la connessione solo se è stata creata con successo
-        if my_conn and my_conn.is_connected():
+        if my_conn is not None and my_conn.is_connected():
             my_cursor.close()
             my_conn.close()
             logging.info("Connessione chiusa correttamente.")
