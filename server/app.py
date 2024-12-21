@@ -18,12 +18,12 @@ from logging_config import configure_logging
 from models import Anomalia, Operazione, FIELD_TO_ANOMALIA_ID
 
 ###############################################################################
-#                              CONFIGURAZIONE LOGGING
+#                           CONFIGURAZIONE LOGGING                            #
 ###############################################################################
 periodic_logger = configure_logging()
 
 ###############################################################################
-#                         CONFIGURAZIONE AMBIENTE E FLASK
+#                       CONFIGURAZIONE AMBIENTE E FLASK                       #
 ###############################################################################
 load_dotenv(dotenv_path='config/.env')  # Caricamento variabili ambiente
 
@@ -44,7 +44,7 @@ MYSQL_USER = os.getenv('MYSQL_USER')
 MYSQL_PASSWORD = os.getenv('MYSQL_PASSWORD')
 
 ###############################################################################
-#                         FUNZIONI DI UTILITÀ (LOG E TIMESTAMP)
+#                         FUNZIONI DI UTILITÀ (LOG E TIMESTAMP)               #
 ###############################################################################
 def clear_log_file(log_file_path: str, backup: bool = True) -> None:
     """
@@ -98,7 +98,7 @@ def validate_timestamp(timestamp_str: str, tolerance_minutes: int = 60) -> datet
     return parsed_timestamp
 
 ###############################################################################
-#                     CONNESSIONE E FUNZIONI AL DATABASE
+#                      CONNESSIONE E FUNZIONI AL DATABASE                     #
 ###############################################################################
 def connect_to_db():
     """
@@ -218,7 +218,7 @@ def save_records(cursor, connection, query, records, retries=3):
     return False
 
 ###############################################################################
-#                            FUNZIONE PRINCIPALE DI ETL
+#                          FUNZIONE PRINCIPALE DI ETL                         #
 ###############################################################################
 def main_etl(rows):
     global etl_status
@@ -318,7 +318,7 @@ def main_etl(rows):
             logging.info('Connessione a MySQL chiusa.')
 
 ###############################################################################
-#                       FUNZIONI PER LA GESTIONE DEGLI ORDINI E PEZZI
+#                  FUNZIONI PER LA GESTIONE DEGLI ORDINI E PEZZI              #
 ###############################################################################
 def get_pezzo_min_idordine():
     """
@@ -505,7 +505,7 @@ def aggiorna_stato_ordine(cursor, id_ordine: int):
     logging.info(f"Stato dell'ordine {id_ordine} aggiornato a 'COMPLETATO' con data_fine = {data_fine}.")
 
 ###############################################################################
-#                       DECORATOR PER PROTEZIONE API KEY
+#                       DECORATOR PER PROTEZIONE API KEY                      #
 ###############################################################################
 def require_api_key(f):
     @wraps(f)
@@ -518,7 +518,7 @@ def require_api_key(f):
     return decorated
 
 ###############################################################################
-#                                 ROUTES FLASK
+#                              ENDOPINT API FLASK                             #
 ###############################################################################
 @app.route('/run-etl', methods=['POST'])
 @require_api_key
@@ -634,7 +634,7 @@ def get_log_cron():
         return jsonify({'error': 'Impossibile leggere i log.'}), 500
 
 ###############################################################################
-#                                  MAIN APP
+#                                  MAIN APP                                   #
 ###############################################################################
 if __name__ == '__main__':
     # Assicurati che la directory dei log esista
