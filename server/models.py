@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from typing import List, Optional
 from pydantic import BaseModel, ValidationError, validator
 from datetime import datetime
-from .timestamp_utils import validate_timestamp  # Se preferisci spostare la validazione timestamp in un file separato
+from timestamp_utils import validate_timestamp  # Se preferisci spostare la validazione timestamp in un file separato
 
 # Mappatura campi -> id anomalia
 FIELD_TO_ANOMALIA_ID = {
