@@ -325,6 +325,7 @@ def insert_operation_data(cursor, data: dict) -> (bool, str, int):
                 anomaly_id = anomaly['id']
                 cursor.execute(insert_anomalia_operazione, (anomaly_id, id_operazione, 'Anomalia registrata'))
 
+        cursor.connection.commit()
         return True, None, id_operazione
 
     except Exception as e:
