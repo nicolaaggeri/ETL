@@ -123,7 +123,7 @@ class Operazione(BaseModel):
         solo se la tipo_operazione è 'forgiatura'.
         """
         if values.get('tipo_operazione') == 'forgiatura':
-            if v is None or not (-50 <= v <= 150):
+            if v is None or not (v < 700 or v > 1200):
                 raise ValueError('Temperatura fuori range')
         return v
 
@@ -471,29 +471,45 @@ def process_and_transfer_to_mysql():
         postgres_logger.info(f"Record RAW trovati: {len(raw_records)}")
 
         for record in raw_records:
-            try:
-                # Converti il record in dizionario
-                data = dict(record)
+            data = dict(record)
+            anomalie = []  # Per raccogliere eventuali anomalie del record
 
+            try:
                 # Validazione con Pydantic
                 postgres_logger.debug(f"Record da validare: {data}")
                 try:
                     operazione = Operazione(**data)
                 except ValidationError as ve:
-                    postgres_logger.warning(f"Record non valido: {data} - Errori: {ve}")
-                    continue
-                operazione_dict = operazione.dict()
+                    errors = ve.errors()
+                    postgres_logger.warning(f"Record non valido: {data} - Errori: {errors}")
+                    for error in errors:
+                        field = error['loc'][-1]
+                        message = error['msg']
+                        anomaly_id = FIELD_TO_ANOMALIA_ID.get(field, 999)
+                        anomalie.append({'id': anomaly_id, 'message': f"{field}: {message}"})
+                    # Continua con i campi invalidi forzati a None
+                    operazione_dict = {**data, **{err['loc'][-1]: None for err in errors}}
+                else:
+                    operazione_dict = operazione.dict()
 
                 # Inserimento in MySQL
                 success, error_msg, id_operazione = insert_operation_data(my_cursor, operazione_dict)
                 mysql_logger.debug(f"Tentativo di inserimento in MySQL: {operazione_dict}")
                 if success:
                     mysql_logger.info(f"Record inserito con successo in MySQL: ID {id_operazione}")
-                    id_ordine = data.get('id_ordine')
-                    codice_pezzo = data.get('codice_pezzo')
-                    if id_ordine and codice_pezzo:
-                        decrement_quantita_pezzo_ordine(my_cursor, id_ordine, codice_pezzo)
-                    
+
+                    # Registra le anomalie associate
+                    if anomalie:
+                        insert_anomalia_operazione = """
+                            INSERT INTO anomalia_operazione (id_anomalia, id_operazione, note)
+                            VALUES (%s, %s, %s)
+                        """
+                        for anomaly in anomalie:
+                            anomaly_id = anomaly['id']
+                            message = anomaly['message']
+                            my_cursor.execute(insert_anomalia_operazione, (anomaly_id, id_operazione, message))
+                        mysql_logger.info(f"Anomalie registrate per ID {id_operazione}: {anomalie}")
+
                     # Aggiorna lo stato in PostgreSQL
                     update_status_query = """
                         UPDATE raw_operazione
@@ -503,14 +519,14 @@ def process_and_transfer_to_mysql():
                     pg_cursor.execute(update_status_query, (record['id_operazione'],))
                     pg_conn.commit()
 
-                     # Cancellazione del record processato
+                    # Cancellazione del record processato
                     delete_query = """
                         DELETE FROM raw_operazione
                         WHERE id_operazione = %s;
                     """
                     pg_cursor.execute(delete_query, (record['id_operazione'],))
                     pg_conn.commit()
-                    postgres_logger.info(f"Record con ID {record['id_operazione']} cancellato da PostgreSQL.")  
+                    postgres_logger.info(f"Record con ID {record['id_operazione']} cancellato da PostgreSQL.")
                 else:
                     mysql_logger.error(f"Inserimento fallito per il record MySQL {data}: {error_msg}")
                     # Aggiorna lo stato in PostgreSQL come 'ERROR'
@@ -521,49 +537,12 @@ def process_and_transfer_to_mysql():
                     """
                     pg_cursor.execute(update_status_query, (record['id_operazione'],))
                     pg_conn.commit()
-                    postgres_logger.debug(f"Aggiornamento/eliminazione di PostgreSQL: {record}")
-
-            except ValidationError as ve:
-                # Gestione errori di validazione: segnalare anomalia
-                errors = ve.errors()
-                logging.warning(f"Record invalido: {data} - Anomalie: {errors}")
-
-                anomalie = []
-                operazione_dict = data.copy()
-                for error in errors:
-                    field = error['loc'][-1]
-                    message = error['msg']
-                    anomaly_id = FIELD_TO_ANOMALIA_ID.get(field, 999)
-                    anomalie.append({'id': anomaly_id, 'message': f"{field}: {message}"})
-                    # Svuota il campo per evitare errori in DB
-                    operazione_dict[field] = None
-
-                # Inserisco comunque il record con i campi invalidi forzati a None
-                try:
-                    success, error_msg, id_operazione = insert_operation_data(my_cursor, operazione_dict)
-                    if success:
-                        logging.info(f"Record inserito con campi invalidi: ID {id_operazione}")
-                        if anomalie and id_operazione:
-                            insert_anomalia_operazione = """
-                                INSERT INTO anomalia_operazione (id_anomalia, id_operazione, note)
-                                VALUES (%s, %s, %s)
-                            """
-                            for anomaly in anomalie:
-                                anomaly_id = anomaly.get('id')
-                                message = anomaly.get('message')
-                                my_cursor.execute(insert_anomalia_operazione,
-                                                  (anomaly_id, id_operazione, message))
-                    else:
-                        logging.error(f"Inserimento fallito per il record con anomalie {data}: {error_msg}")
-                except Exception as e:
-                    logging.error(f"Errore durante l'inserimento del record invalidato {data}: {e}", exc_info=True)
 
             except Exception as e:
                 mysql_logger.error(f"Errore durante il trasferimento del record {record}: {e}", exc_info=True)
                 pg_conn.rollback()
                 my_conn.rollback()
                 etl_status['last_error'] = str(e)
-                return 500
 
         postgres_logger.info("Processo di validazione e trasferimento completato con successo.")
         etl_status['last_success'] = datetime.utcnow().isoformat()
