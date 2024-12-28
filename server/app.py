@@ -211,11 +211,16 @@ def parse_timestamp(timestamp_str: str) -> datetime:
     except ValueError:
         return datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S')
 
-def validate_timestamp(timestamp_str: str, tolerance_minutes: int = 60) -> datetime:
+def validate_timestamp(timestamp, tolerance_minutes: int = 60) -> datetime:
     """
     Valida che il timestamp sia entro una certa tolleranza rispetto all'orario corrente.
+    Supporta sia stringhe che oggetti datetime.
     """
-    parsed_timestamp = parse_timestamp(timestamp_str)
+    if isinstance(timestamp, datetime):
+        parsed_timestamp = timestamp
+    else:
+        parsed_timestamp = parse_timestamp(timestamp)
+
     now = datetime.utcnow()
     tolerance = timedelta(minutes=tolerance_minutes)
 
