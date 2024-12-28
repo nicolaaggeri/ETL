@@ -266,7 +266,7 @@ def connect_to_db_postgres():
         logging.error(f"Errore nella connessione al database PostgreSQL: {e}")
         raise
 
-def insert_operation_data(cursor, data: dict) -> (bool, str, int):
+def insert_operation_data(connection, cursor, data: dict) -> (bool, str, int):
     """
     Inserisce l'operazione e gli eventuali dettagli (forgiatura o cnc) e anomalie.
     Ritorna (success, error_message, id_operazione).
@@ -325,11 +325,13 @@ def insert_operation_data(cursor, data: dict) -> (bool, str, int):
                 anomaly_id = anomaly['id']
                 cursor.execute(insert_anomalia_operazione, (anomaly_id, id_operazione, 'Anomalia registrata'))
 
-        cursor.commit()
+        # Commit delle modifiche
+        connection.commit()
         return True, None, id_operazione
 
     except Exception as e:
         logging.error(f"Errore durante l'inserimento nel database MySQL: {e}", exc_info=True)
+        connection.rollback()  # Rollback delle modifiche in caso di errore
         return False, str(e), None
 
 def decrement_quantita_pezzo_ordine(cursor, id_ordine: int, codice_pezzo: str) -> None:
@@ -494,7 +496,7 @@ def process_and_transfer_to_mysql():
                     operazione_dict = operazione.dict()
 
                 # Inserimento in MySQL
-                success, error_msg, id_operazione = insert_operation_data(my_cursor, operazione_dict)
+                success, error_msg, id_operazione = insert_operation_data(my_conn, my_cursor, operazione_dict)
                 mysql_logger.debug(f"Tentativo di inserimento in MySQL: {operazione_dict}")
                 if success:
                     mysql_logger.info(f"Record inserito con successo in MySQL: ID {id_operazione}")
