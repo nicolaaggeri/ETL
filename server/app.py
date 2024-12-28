@@ -470,11 +470,17 @@ def process_and_transfer_to_mysql():
                 data = dict(record)
 
                 # Validazione con Pydantic
-                operazione = Operazione(**data)
+                postgres_logger.debug(f"Record da validare: {data}")
+                try:
+                    operazione = Operazione(**data)
+                except ValidationError as ve:
+                    postgres_logger.warning(f"Record non valido: {data} - Errori: {ve}")
+                    continue
                 operazione_dict = operazione.dict()
 
                 # Inserimento in MySQL
                 success, error_msg, id_operazione = insert_operation_data(my_cursor, operazione_dict)
+                mysql_logger.debug(f"Tentativo di inserimento in MySQL: {operazione_dict}")
                 if success:
                     mysql_logger.info(f"Record inserito con successo in MySQL: ID {id_operazione}")
                     id_ordine = data.get('id_ordine')
@@ -509,6 +515,7 @@ def process_and_transfer_to_mysql():
                     """
                     pg_cursor.execute(update_status_query, (record['id_operazione'],))
                     pg_conn.commit()
+                    postgres_logger.debug(f"Aggiornamento/eliminazione di PostgreSQL: {record}")
 
             except ValidationError as ve:
                 # Gestione errori di validazione: segnalare anomalia
