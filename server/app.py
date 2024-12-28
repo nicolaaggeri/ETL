@@ -382,7 +382,7 @@ def main_etl_postgres(rows):
                 id_ordine, codice_pezzo, codice_macchinario, codice_operatore,
                 timestamp_inizio, timestamp_fine, peso_effettivo, temperatura_effettiva,
                 id_anomalia, numero_pezzi_ora, tipo_fermo, stato
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
 
         for i, data in enumerate(rows):
