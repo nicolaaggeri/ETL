@@ -399,8 +399,7 @@ def main_etl_postgres(rows):
                     data.get('temperatura_effettiva'),
                     data['anomalia'][0]['id'] if data.get('anomalia') else None,
                     data.get('numero_pezzi_ora'),
-                    data.get('tipo_fermo'),
-                    'RAW'  # Stato iniziale
+                    data.get('tipo_fermo')
                 )
 
                 pg_cursor.execute(insert_query, insert_values)
