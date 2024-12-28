@@ -164,11 +164,11 @@ MYSQL_DATABASE = os.getenv('MYSQL_DATABASE')
 MYSQL_USER = os.getenv('MYSQL_USER')
 MYSQL_PASSWORD = os.getenv('MYSQL_PASSWORD')
 
-POSTGRES_HOST = os.getenv('POSTGRES_HOST')
-POSTGRES_PORT = os.getenv('POSTGRES_PORT')
-POSTGRES_DATABASE = os.getenv('POSTGRES_DATABASE')
-POSTGRES_USER = os.getenv('POSTGRES_USER')
-POSTGRES_PASSWORD = os.getenv('POSTGRES_PASSWORD')
+POSTGRES_HOST = os.getenv('PG_HOST')
+POSTGRES_PORT = os.getenv('PG_PORT')
+POSTGRES_DATABASE = os.getenv('PG_DATABASE')
+POSTGRES_USER = os.getenv('PG_USER')
+POSTGRES_PASSWORD = os.getenv('PG_PASSWORD')
 
 ###############################################################################
 #                         FUNZIONI DI UTILITÀ (LOG E TIMESTAMP)               #
