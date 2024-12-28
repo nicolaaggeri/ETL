@@ -386,7 +386,7 @@ def main_etl_postgres(rows):
             INSERT INTO raw_operazione (
                 id_ordine, codice_pezzo, codice_macchinario, codice_operatore,
                 timestamp_inizio, timestamp_fine, peso_effettivo, temperatura_effettiva,
-                id_anomalia, numero_pezzi_ora, tipo_fermo
+                id_anomalia, numero_pezzi_ora, tipo_fermo, tipo_operazione
             ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
 
@@ -404,7 +404,8 @@ def main_etl_postgres(rows):
                     data.get('temperatura_effettiva'),
                     data['anomalia'][0]['id'] if data.get('anomalia') else None,
                     data.get('numero_pezzi_ora'),
-                    data.get('tipo_fermo')
+                    data.get('tipo_fermo'),
+                    data.get('tipo_operazione')
                 )
 
                 pg_cursor.execute(insert_query, insert_values)
