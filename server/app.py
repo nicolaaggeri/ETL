@@ -252,6 +252,8 @@ def fetch_all_etl_actions():
     """
     Recupera tutti i record dalla tabella etl_tracked_actions ordinati dal più recente al più vecchio.
     """
+    conn = None
+    cursor = None
     try:
         conn = connect_to_db()
         cursor = conn.cursor(cursor_factory=RealDictCursor)
@@ -275,20 +277,22 @@ def fetch_error_etl_actions():
     Recupera tutti i record con stato "ERROR" dalla tabella etl_tracked_actions.
     Se non ci sono record, restituisce un messaggio specifico.
     """
+    conn = None
+    cursor = None
     try:
         conn = connect_to_db()
         cursor = conn.cursor(cursor_factory=RealDictCursor)
 
         query = """
             SELECT * FROM etl_tracked_actions
-            WHERE status = 'FAILURE'
+            WHERE status = 'ERROR'
             ORDER BY timestamp DESC;
         """
         cursor.execute(query)
         results = cursor.fetchall()
 
         if not results:
-            return {"message": "Nessun record con stato 'FAILURE' trovato."}
+            return {"message": "Nessun record con stato 'ERROR' trovato."}
         return results
 
     finally:
