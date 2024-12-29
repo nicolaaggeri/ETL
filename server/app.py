@@ -247,7 +247,55 @@ def log_etl_action(cursor, action_type, status, details=None, error_message=None
         ))
     except Exception as e:
         logging.error(f"Errore durante il logging dell'azione ETL: {e}", exc_info=True)
-        
+
+def fetch_all_etl_actions():
+    """
+    Recupera tutti i record dalla tabella etl_tracked_actions ordinati dal più recente al più vecchio.
+    """
+    try:
+        conn = connect_to_db()
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
+
+        query = """
+            SELECT * FROM etl_tracked_actions
+            ORDER BY timestamp DESC;
+        """
+        cursor.execute(query)
+        results = cursor.fetchall()
+        return results
+
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+def fetch_error_etl_actions():
+    """
+    Recupera tutti i record con stato "ERROR" dalla tabella etl_tracked_actions.
+    Se non ci sono record, restituisce un messaggio specifico.
+    """
+    try:
+        conn = connect_to_db()
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
+
+        query = """
+            SELECT * FROM etl_tracked_actions
+            WHERE status = 'FAILURE'
+            ORDER BY timestamp DESC;
+        """
+        cursor.execute(query)
+        results = cursor.fetchall()
+
+        if not results:
+            return {"message": "Nessun record con stato 'FAILURE' trovato."}
+        return results
+
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
 ###############################################################################
 #                      CONNESSIONE E FUNZIONI AL DATABASE                     #
 ###############################################################################
@@ -972,6 +1020,33 @@ def clear_logs():
         for log_file in ALLOWED_LOG_FILES.values():
             clear_log_file(log_file)
         return jsonify({'message': 'Tutti i file di log sono stati puliti con successo.'}), 200
+
+@app.route('/actions', methods=['GET'])
+def get_all_etl_actions():
+    """
+    API endpoint per recuperare tutti i record dalla tabella etl_tracked_actions.
+    """
+    try:
+        results = fetch_all_etl_actions()
+        return jsonify({"success": True, "data": results}), 200
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/actions/errors', methods=['GET'])
+def get_error_etl_actions():
+    """
+    API endpoint per recuperare tutti i record con stato "ERROR".
+    Se non ci sono record, restituisce un messaggio specifico.
+    """
+    try:
+        results = fetch_error_etl_actions()
+        if isinstance(results, dict):
+            return jsonify({"success": False, "message": results["message"]}), 404
+        return jsonify({"success": True, "data": results}), 200
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/status', methods=['GET'])
 def get_status():
