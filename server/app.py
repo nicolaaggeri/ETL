@@ -256,7 +256,7 @@ def fetch_all_etl_actions():
     cursor = None
     try:
         conn = connect_to_db()
-        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
         query = """
             SELECT * FROM etl_tracked_actions
@@ -264,7 +264,7 @@ def fetch_all_etl_actions():
         """
         cursor.execute(query)
         results = cursor.fetchall()
-        return results
+        return [dict(row) for row in results]
 
     finally:
         if cursor:
@@ -281,7 +281,7 @@ def fetch_error_etl_actions():
     cursor = None
     try:
         conn = connect_to_db()
-        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
         query = """
             SELECT * FROM etl_tracked_actions
@@ -293,7 +293,7 @@ def fetch_error_etl_actions():
 
         if not results:
             return {"message": "Nessun record con stato 'ERROR' trovato."}
-        return results
+        return [dict(row) for row in results]
 
     finally:
         if cursor:
