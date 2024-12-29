@@ -255,7 +255,7 @@ def fetch_all_etl_actions():
     conn = None
     cursor = None
     try:
-        conn = connect_to_db()
+        conn = connect_to_db_postgres()
         cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
         query = """
@@ -280,7 +280,7 @@ def fetch_error_etl_actions():
     conn = None
     cursor = None
     try:
-        conn = connect_to_db()
+        conn = connect_to_db_postgres()
         cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
         query = """
