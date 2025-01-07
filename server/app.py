@@ -562,8 +562,7 @@ def process_and_transfer_to_mysql():
                         message = error['msg']
                         anomaly_id = FIELD_TO_ANOMALIA_ID.get(field, 999)
                         anomalie.append({'id': anomaly_id, 'message': f"{field}: {message}"})
-                    # Continua con i campi invalidi forzati a None
-                    operazione_dict = {**data, **{err['loc'][-1]: None for err in errors}}
+                    operazione_dict = data
                 else:
                     operazione_dict = operazione.dict()
 
