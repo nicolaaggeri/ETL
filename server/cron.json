@@ -1,10 +1,10 @@
 {
     "jobs": [
         {
-            "command": "0 * * * * curl -X POST https://etlprj.osc-fr1.scalingo.io/aggiorna/ordine"
+            "command": "0 * * * * curl -X POST https://pythonetl.osc-fr1.scalingo.io/aggiorna/ordine"
         },
         {
-            "command": "5 * * * * curl -X POST https://etlprj.osc-fr1.scalingo.io/process-transfer"
+            "command": "5 * * * * curl -X POST https://pythonetl.osc-fr1.scalingo.io/process-transfer"
         }
     ]
 }
