@@ -548,8 +548,8 @@ def main_etl_postgres_cnc(rows):
             postgres_logger.debug(f"Ingestione record PostgreSQL (CNC) #{i}: {data}")
             try:
                 insert_values = (
-                    data.get('cod_operatore'),
-                    data.get('cod_macchinario'),
+                    data.get('codice_operatore'),
+                    data.get('codice_macchinario'),
                     data.get('numero_pezzi_ora'),
                     data.get('codice_pezzo'),
                     data.get('tipo_operazione')
