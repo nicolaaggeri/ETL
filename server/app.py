@@ -539,8 +539,9 @@ def main_etl_postgres_cnc(rows):
                 codice_operatore,    -- da cod_operatore nel JSON
                 codice_macchinario,  -- da cod_macchinario nel JSON
                 numero_pezzi_ora,    -- da numero_pezzi_ora nel JSON
+                codice_pezzo,
                 tipo_operazione
-            ) VALUES (%s, %s, %s, %s)
+            ) VALUES (%s, %s, %s, %s, %s)
         """
 
         for i, data in enumerate(rows):
@@ -550,6 +551,7 @@ def main_etl_postgres_cnc(rows):
                     data.get('cod_operatore'),
                     data.get('cod_macchinario'),
                     data.get('numero_pezzi_ora'),
+                    data.get('codice_pezzo'),
                     data.get('tipo_operazione')
                 )
 
