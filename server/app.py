@@ -512,6 +512,83 @@ def main_etl_postgres(rows):
             pg_conn.close()
             postgres_logger.info('Connessione a PostgreSQL chiusa.')
 
+def main_etl_postgres_cnc(rows):
+    """
+    Funzione di ETL che inserisce dati nella tabella raw_operazione,
+    prendendo in input un array di oggetti JSON con i campi:
+      - cod_operatore (integer)
+      - cod_macchinario (integer)
+      - numero_pezzi_ora (integer)
+
+    Tutti gli altri campi della tabella vengono lasciati NULL.
+    """
+    global etl_status
+    etl_status['running'] = True
+    etl_status['last_run'] = datetime.utcnow().isoformat()
+
+    pg_conn = None
+    pg_cursor = None
+
+    try:
+        pg_conn = connect_to_db_postgres()  # La tua funzione di connessione
+        pg_cursor = pg_conn.cursor()
+        postgres_logger.info('Connesso a PostgreSQL (funzione main_etl_postgres_cnc).')
+
+        insert_query = """
+            INSERT INTO raw_operazione (
+                codice_operatore,    -- da cod_operatore nel JSON
+                codice_macchinario,  -- da cod_macchinario nel JSON
+                numero_pezzi_ora,    -- da numero_pezzi_ora nel JSON
+                tipo_operazione
+            ) VALUES (%s, %s, %s, %s)
+        """
+
+        for i, data in enumerate(rows):
+            postgres_logger.debug(f"Ingestione record PostgreSQL (CNC) #{i}: {data}")
+            try:
+                insert_values = (
+                    data.get('cod_operatore'),
+                    data.get('cod_macchinario'),
+                    data.get('numero_pezzi_ora'),
+                    data.get('tipo_operazione')
+                )
+
+                pg_cursor.execute(insert_query, insert_values)
+                pg_conn.commit()
+
+                postgres_logger.info(
+                    f"Record PostgreSQL (CNC) inserito con successo (indice JSON: {i})."
+                )
+
+            except Exception as e:
+                postgres_logger.error(
+                    f"Errore durante l'inserimento in PostgreSQL (CNC) per il record {data}: {e}",
+                    exc_info=True
+                )
+                pg_conn.rollback()
+                etl_status['last_error'] = str(e)
+                return 500
+
+        postgres_logger.info("Ingestione ETL PostgreSQL (CNC) completata con successo.")
+        etl_status['last_success'] = datetime.utcnow().isoformat()
+        etl_status['last_error'] = None
+        return 200
+
+    except Exception as e:
+        postgres_logger.error(f'Errore generico ETL PostgreSQL (CNC): {e}', exc_info=True)
+        periodic_logger.error(f"ETL PostgreSQL (CNC) fallito con errore: {e}")
+        etl_status['last_error'] = str(e)
+        return 500
+
+    finally:
+        etl_status['running'] = False
+        periodic_logger.info("ETL PostgreSQL (CNC) completato")
+        if pg_cursor:
+            pg_cursor.close()
+        if pg_conn and not pg_conn.closed:
+            pg_conn.close()
+            postgres_logger.info('Connessione a PostgreSQL chiusa (CNC).')
+
 ###############################################################################
 #                  FUNZIONE VALIDAZIONE E TRASFERIMENTO A MYSQL               #
 ###############################################################################          
@@ -878,9 +955,9 @@ def trigger_etl():
         logging.error(f'Errore nell\'avvio dell\'ETL: {e}')
         return jsonify({'error': 'Errore del server interno.'}), 500
 
-@app.route('/insert-postgres', methods=['POST'])
+@app.route('/insert-postgres-forgiatura', methods=['POST'])
 @require_api_key
-def insert_postgres_endpoint():
+def insert_postgres_forgiatura_endpoint():
     """
     Endpoint per inserire dati nella tabella raw_operazione tramite ETL PostgreSQL.
     """
@@ -892,6 +969,28 @@ def insert_postgres_endpoint():
             return jsonify({'error': 'I dati devono essere una lista di record.'}), 400
 
         result = main_etl_postgres(data)
+        if result == 200:
+            return jsonify({'message': 'Dati inseriti con successo in PostgreSQL.'}), 200
+        else:
+            return jsonify({'error': 'Inserimento fallito in PostgreSQL.'}), 500
+    except Exception as e:
+        postgres_logger.error(f'Errore nella gestione della richiesta PostgreSQL: {e}')
+        return jsonify({'error': 'Errore del server interno.'}), 500
+
+@app.route('/insert-postgres-cnc', methods=['POST'])
+@require_api_key
+def insert_postgres_cnc_endpoint():
+    """
+    Endpoint per inserire dati nella tabella raw_operazione tramite ETL PostgreSQL.
+    """
+    try:
+        data = request.get_json()
+        postgres_logger.info(f'Dati ricevuti per PostgreSQL: {data}')
+        
+        if not isinstance(data, list):
+            return jsonify({'error': 'I dati devono essere una lista di record.'}), 400
+
+        result = main_etl_postgres_cnc(data)
         if result == 200:
             return jsonify({'message': 'Dati inseriti con successo in PostgreSQL.'}), 200
         else:
